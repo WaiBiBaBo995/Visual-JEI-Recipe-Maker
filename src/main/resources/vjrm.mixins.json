@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.pureneko.vjrm.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "EmiRecipeDisplayMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

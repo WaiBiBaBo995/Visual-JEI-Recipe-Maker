@@ -1,0 +1,9 @@
+{
+  "type": "vjrm:test_machine",
+  "input": {"ingredient": {"item": "minecraft:stone"}, "count": 2},
+  "fluid_input": {"ingredient": {"fluid": "minecraft:water"}, "amount": 1000},
+  "result": {"id": "minecraft:diamond", "count": 1},
+  "duration": 123,
+  "chance": 0.75,
+  "source_marker": 37
+}
