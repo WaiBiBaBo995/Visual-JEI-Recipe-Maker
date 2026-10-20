@@ -65,7 +65,7 @@ final class JsonEditBox extends AbstractScrollWidget {
         final boolean[] handled={false};edit(()->handled[0]=text.keyPressed(key));return handled[0];
     }
     @Override public boolean charTyped(char c,int modifiers){
-        if(!visible||!isFocused()||!StringUtil.isAllowedChatCharacter(c))return false;
+        if(!visible||!isFocused()||!net.minecraft.SharedConstants.isAllowedChatCharacter(c))return false;
         edit(()->{
             String value=text.value();int cursor=text.cursor();boolean inside=JsonSyntax.inString(value,cursor);
             if(!text.hasSelection()&&cursor<value.length()&&value.charAt(cursor)==c&&(c=='}'||c==']'||c=='"'&&inside)){

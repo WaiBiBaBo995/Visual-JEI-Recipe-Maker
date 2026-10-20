@@ -1,0 +1,1 @@
+{"type": "vjrm:test_machine", "input": {"item": "minecraft:iron_ingot"}, "fluid_input": {"fluid": "minecraft:water", "amount": 750}, "result": {"item": "minecraft:diamond", "count": 2}, "duration": 123, "chance": 0.75, "energy": 9007199254740993, "source_marker": 37}

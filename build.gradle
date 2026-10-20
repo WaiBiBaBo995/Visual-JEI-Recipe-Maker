@@ -1,62 +1,64 @@
 plugins {
     id 'java-library'
-    id 'net.neoforged.moddev' version '2.0.107'
+    id 'net.minecraftforge.gradle' version '6.0.54'
 }
-
-version = mod_version
+version = "${mod_version}+1.20.1-forge"
 group = mod_group_id
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
+base.archivesName = 'visual-jei-recipe-maker'
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    runs {
+        configureEach {
+            workingDirectory project.file("run/${name}")
+            property 'forge.logging.console.level', 'info'
+            args '--mixin','vjrm.mixins.json'
+            if(project.hasProperty('verifyMekanism')) property 'vjrm.verifyMekanism','true'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            mods { vjrm { source sourceSets.main; source sourceSets.test } }
+        }
+        client {
+            if(project.hasProperty('verifyClient')) {
+                property 'vjrm.verifyClient','true'
+                property 'vjrm.viewer', project.findProperty('viewer') ?: 'jei'
+                args '--quickPlaySingleplayer','Vjrm UI Verification'
+            }
+        }
+        gameTestServer { property 'forge.enabledGameTestNamespaces','vjrm' }
+        server { args '--nogui' }
+    }
+}
 repositories {
+    maven { url = file('build/verification/maven'); content { includeGroup 'mekanism' } }
+    maven { url = 'https://modmaven.dev'; content { includeGroup 'mekanism' }; metadataSources { mavenPom(); artifact() } }
     maven { url = 'https://maven.blamejared.com' }
     maven { url = 'https://maven.terraformersmc.com/releases/' }
 }
-
-neoForge {
-    version = neo_version
-    runs {
-        client { client(); gameDirectory = file('run/client') }
-        clientCheck {
-            client(); gameDirectory = file('run/client-check')
-            systemProperty 'vjrm.verifyClient', 'true'
-            if (project.hasProperty('viewer') && project.property('viewer') in ['emi', 'both']) systemProperty 'vjrm.verifyEmi', 'true'
-            if (project.hasProperty('verifyCreate')) systemProperty 'vjrm.verifyCreate', 'true'
-            programArgument '--quickPlaySingleplayer'
-            programArgument 'Vjrm UI Verification'
-        }
-        server { server(); gameDirectory = file('run/server'); programArgument '--nogui' }
-        recipeCheck {
-            type = 'gameTestServer'
-            gameDirectory = file('run/recipe-check')
-            systemProperty 'neoforge.enabledGameTestNamespaces', 'vjrm'
-        }
-    }
-    mods { vjrm { sourceSet(sourceSets.main); sourceSet(sourceSets.test) } }
-}
-jar { manifest { attributes('Implementation-Version': project.version) } }
-
 dependencies {
-    if (project.hasProperty('verifyCreate')) runtimeOnly files('build/verification/deps/create-1.21.1-6.0.10.jar')
-    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    compileOnly "dev.emi:emi-neoforge:${emi_version}"
-    if (!project.hasProperty('viewer') || project.property('viewer') != 'emi') runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    if (project.hasProperty('viewer') && project.property('viewer') in ['emi', 'both']) runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
+    if(project.hasProperty("verifyMekanism")) runtimeOnly(fg.deobf("mekanism:Mekanism:1.20.1-10.4.16.80")) { transitive=false }
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+    compileOnly fg.deobf("dev.emi:emi-forge:${emi_version}")
+    if (!project.hasProperty('viewer') || project.property('viewer') in ['jei','both']) runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+    if (project.hasProperty('viewer') && project.property('viewer') in ['emi','both']) runtimeOnly fg.deobf("dev.emi:emi-forge:${emi_version}")
 }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+jar { manifest { attributes('Implementation-Version': project.version,'MixinConfigs':'vjrm.mixins.json') }; finalizedBy 'reobfJar' }
 
-sourceSets.main.resources.srcDir 'src/generated/resources'
 sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
-
-tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
-
-tasks.register('verifyRecipes') { dependsOn 'runRecipeCheck' }
-tasks.named('runClientCheck') { doFirst { file('build/verification/client/result.txt').delete() } }
-
-tasks.register('verifyClient') {
-    dependsOn 'runClientCheck'
+tasks.register('verifyRecipes') {
+    dependsOn 'runGameTestServer'
     doLast {
-        def result = file('build/verification/client/result.txt')
-        if (!result.exists() || !result.text.startsWith('PASS:')) throw new GradleException('Client verification failed; see build/verification/client/result.txt')
+        def result=file('build/verification/server/result.txt')
+        if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException('Recipe verification did not complete')
+        if(project.hasProperty('verifyMekanism')){def mek=file('build/verification/server/mekanism-result.txt');if(!mek.exists()||!mek.text.startsWith('PASS:'))throw new GradleException('Mekanism verification did not complete')}
     }
 }
+tasks.matching { it.name == 'runGameTestServer' }.configureEach {doFirst{file('build/verification/server/result.txt').delete();file('build/verification/server/mekanism-result.txt').delete()}}
+tasks.register('verifyClient') {
+    dependsOn 'runClient'
+    doLast { def result=file('build/verification/client/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException('Client verification failed; see build/verification/client/result.txt') }
+}
+tasks.matching { it.name == 'runClient' }.configureEach {doFirst{if(project.hasProperty('verifyClient'))file('build/verification/client/result.txt').delete()}}

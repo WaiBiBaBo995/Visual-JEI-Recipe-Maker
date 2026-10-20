@@ -1,0 +1,1 @@
+{"type": "minecraft:crafting_shaped", "pattern": ["AB", " C"], "key": {"A": {"item": "minecraft:stone"}, "B": {"item": "minecraft:gold_ingot"}, "C": {"item": "minecraft:iron_ingot"}}, "result": {"item": "minecraft:diamond", "count": 2}, "source_marker": 37}

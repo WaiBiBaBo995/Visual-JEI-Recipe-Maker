@@ -67,6 +67,7 @@
   "vjrm.json.valid": "JSON syntax is valid. Apply also checks the recipe serializer.",
   "vjrm.json.help": "Tab: indent · bracket/quote pairs · Ctrl+Z/Y: undo/redo · Ctrl+Shift+F: format · Ctrl+S: apply",
   "vjrm.error.number_range": "The serializer cannot represent this value without truncation or overflow.",
+  "vjrm.error.fixed_count": "This 1.20.1 cooking recipe always produces one item. Its serializer cannot change the result count.",
   "vjrm.json.copy": "Copy to clipboard",
   "vjrm.json.copied": "Copied current JSON to clipboard",
   "vjrm.error.chemical": "Unknown chemical, or its chemical family does not match this slot.",

@@ -67,6 +67,7 @@
   "vjrm.json.valid": "JSON 語法正確；套用時還會驗證配方 serializer。",
   "vjrm.json.help": "Tab 縮排 · 括號/引號補全 · Ctrl+Z/Y 復原/重做 · Ctrl+Shift+F 格式化 · Ctrl+S 套用",
   "vjrm.error.number_range": "此配方的 serializer 會截斷此數值或發生溢位，請使用有效範圍內的數值。",
+  "vjrm.error.fixed_count": "原版 1.20.1 烹飪配方固定產出 1 個物品，其 serializer 不支援修改產出數量。",
   "vjrm.json.copy": "複製到剪貼簿",
   "vjrm.json.copied": "已複製目前 JSON 到剪貼簿",
   "vjrm.error.chemical": "無法識別此化學品，或化學品類型與槽位不符。",

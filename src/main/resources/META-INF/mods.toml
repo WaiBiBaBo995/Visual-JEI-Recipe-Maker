@@ -1,37 +1,33 @@
 modLoader="javafml"
-loaderVersion="[4,)"
+loaderVersion="[47,)"
 license="MIT"
 [[mods]]
 modId="vjrm"
 version="${file.jarVersion}"
 displayName="Visual JEI Recipe Maker"
-description='In-game datapack recipe authoring with JEI or EMI.'
 authors="PureNeko"
+description='In-game recipe editor for JEI or EMI on Minecraft 1.20.1 Forge.'
 [[dependencies.vjrm]]
-modId="neoforge"
-type="required"
-versionRange="[21.1.65,)"
+modId="forge"
+mandatory=true
+versionRange="[47.1.1,)"
 ordering="NONE"
 side="BOTH"
 [[dependencies.vjrm]]
 modId="minecraft"
-type="required"
-versionRange="[1.21.1]"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
 ordering="NONE"
 side="BOTH"
 [[dependencies.vjrm]]
 modId="jei"
-type="optional"
-versionRange="[19.27.0,)"
+mandatory=false
+versionRange="[15.74.0,)"
 ordering="AFTER"
 side="CLIENT"
-
 [[dependencies.vjrm]]
 modId="emi"
-type="optional"
+mandatory=false
 versionRange="[1.1.24,)"
 ordering="AFTER"
 side="CLIENT"
-
-[[mixins]]
-config="vjrm.mixins.json"

@@ -12,6 +12,7 @@ final class EditorFeatureChecks {
     static void check(boolean value,String reason){if(!value)throw new AssertionError(reason);}
     static void run()throws Exception{
         var mc=Minecraft.getInstance();var doc=RecipeDocument.template("smelting");
+        for(String type:RecipeDocument.TYPES){var vanilla=new RecipeEditorScreen(RecipeDocument.template(type),null,"vjrm:vanilla_check",null);mc.setScreen(vanilla);check(field(vanilla,"layout")!=null,"Vanilla layout missing: "+type);check(((RecipePreview.Layout)field(vanilla,"layout")).getRecipeSlotsView().getSlotViews().stream().anyMatch(s->s.getRole()==RecipePreview.Role.OUTPUT),"No output slot: "+type);}
         var editor=new RecipeEditorScreen(doc,null,"vjrm:features",null);mc.setScreen(editor);
         check(((Button)field(editor,"fieldButton")).getY()+18<=(int)field(editor,"previewY"),"Field controls overlap or sit below recipe UI");
         check(editor.sourceDescription().getString().contains("minecraft:smelting")&&!editor.sourceDescription().getString().equals(net.minecraft.network.chat.Component.translatable("vjrm.source_type","minecraft:smelting").getString()),"Recipe source has no display name");

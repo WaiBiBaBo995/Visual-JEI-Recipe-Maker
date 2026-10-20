@@ -3,7 +3,7 @@ package com.pureneko.vjrm.client;
 import com.pureneko.vjrm.recipe.RecipeDocument;
 import dev.emi.emi.api.recipe.*;
 import dev.emi.emi.api.stack.*;
-import dev.emi.emi.api.neoforge.NeoForgeEmiStack;
+import dev.emi.emi.api.forge.ForgeEmiStack;
 import dev.emi.emi.api.widget.*;
 import dev.emi.emi.recipe.*;
 import net.minecraft.client.Minecraft;
@@ -11,8 +11,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
-import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fluids.FluidStack;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Stream;
@@ -75,7 +75,7 @@ final class EmiNativePreview implements RecipePreview.Layout,WidgetHolder {
     public Object nativeLayout(){return recipe;}
     public boolean usesEmiCraftingGrid(){return recipe instanceof EmiCraftingRecipe;}
     public void drawRecipe(GuiGraphics g,int mx,int my){
-        float delta=Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+        float delta=Minecraft.getInstance().getFrameTime();
         for(var widget:widgets){g.pose().pushPose();try{widget.render(g,mx,my,delta);}finally{g.pose().popPose();}}
     }
     private RecipePreview.Role role(SlotWidget slot){
@@ -107,8 +107,8 @@ final class EmiNativePreview implements RecipePreview.Layout,WidgetHolder {
         public void override(List<?> values){
             // Only freshly created preview widgets are changed. Reuse their own renderers, tank
             // geometry, backgrounds and overlays instead of replacing them with generic slots.
-            var stacks=values.stream().map(v->v instanceof ItemStack i?EmiStack.of(i):v instanceof FluidStack f?NeoForgeEmiStack.of(f):VjrmEmiPlugin.chemicalStack(v)).toList();
-            EmiIngredient changed=EmiIngredient.of(stacks,stacks.isEmpty()?1:stacks.getFirst().getAmount()).setChance(widget.getStack().getChance());
+            var stacks=values.stream().map(v->v instanceof ItemStack i?EmiStack.of(i):v instanceof FluidStack f?ForgeEmiStack.of(f):VjrmEmiPlugin.chemicalStack(v)).toList();
+            EmiIngredient changed=EmiIngredient.of(stacks,stacks.isEmpty()?1:stacks.get(0).getAmount()).setChance(widget.getStack().getChance());
             if(EmiIngredient.areEqual(widget.getStack(),changed)&&widget.getStack().getAmount()==changed.getAmount()){override=List.copyOf(values);return;}
             try{
                 if(stackField==null){stackField=SlotWidget.class.getDeclaredField("stack");stackField.setAccessible(true);}
