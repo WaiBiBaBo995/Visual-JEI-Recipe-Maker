@@ -43,14 +43,16 @@ final class JeiPreviewProvider implements RecipePreview.Provider {
         public void tick(){layout.tick();}
         public Object nativeLayout(){return layout;}
     }
-    private record JeiSlot(IRecipeSlotDrawable slot) implements RecipePreview.Slot {
+    private final class JeiSlot implements RecipePreview.Slot {
+        private final IRecipeSlotDrawable slot;
+        JeiSlot(IRecipeSlotDrawable slot){this.slot=slot;}
         @SuppressWarnings("removal") public Rect2i getRect(){return slot.getRect();}
         public RecipePreview.Role getRole(){return RecipePreview.Role.valueOf(slot.getRole().name());}
-        public Stream<RecipePreview.Value> getAllIngredients(){return slot.getAllIngredients().map(i->new RecipePreview.Value(i.getIngredient()));}
-        public Optional<RecipePreview.Value> getDisplayedIngredient(){return slot.getDisplayedIngredient().map(i->new RecipePreview.Value(i.getIngredient()));}
+        public Stream<RecipePreview.Value> getAllIngredients(){return slot.getAllIngredients().map(i->new RecipePreview.Value(FabricFluidBridge.wrap(i.getIngredient())));}
+        public Optional<RecipePreview.Value> getDisplayedIngredient(){return slot.getDisplayedIngredient().map(i->new RecipePreview.Value(FabricFluidBridge.wrap(i.getIngredient())));}
         public boolean isEmpty(){return slot.isEmpty();}
         @SuppressWarnings("removal") public List<net.minecraft.network.chat.Component> tooltip(){return IngredientTooltips.identify(slot.getTooltip(),getDisplayedIngredient().map(RecipePreview.Value::getIngredient).orElse(null));}
-        public void override(List<?> values){slot.createDisplayOverrides().addIngredientsUnsafe(values);}
+        public void override(List<?> values){slot.createDisplayOverrides().addIngredientsUnsafe(values.stream().map(v->FabricFluidBridge.unwrap(v,runtime.get().getJeiHelpers())).toList());}
         public Object nativeSlot(){return slot;}
     }
 }

@@ -8,20 +8,32 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
-import net.neoforged.neoforge.fluids.FluidStack;
+import com.pureneko.vjrm.platform.FluidStack;
 import java.util.*;
 
 /** A lossless JSON draft. Only explicitly selected fields are replaced. */
 public final class RecipeDocument {
-    public record Field(List<String> path, boolean fluid, boolean output, String chemical) {
+    public record Field(List<String> path, boolean fluid, boolean output, String chemical, boolean raw) {
+        public Field{path=List.copyOf(path);}
+        public Field(List<String> path,boolean fluid,boolean output,String chemical){this(path,fluid,output,chemical,false);}
         public Field(List<String> path,boolean fluid,boolean output){this(path,fluid,output,"");}
-        public String label() { return String.join("/", path); }
+        public String label() { return JsonFieldPaths.label(path); }
     }
     public static final List<String> TYPES = List.of("crafting_shaped", "crafting_shapeless", "smelting", "blasting", "smoking", "campfire_cooking", "stonecutting", "smithing_transform");
     private JsonObject json;
+    private final Map<List<String>,Field> manualFields=new LinkedHashMap<>();
     public RecipeDocument(JsonObject json) { this.json = json.deepCopy(); }
     public JsonObject json() { return json.deepCopy(); }
-    public void replace(JsonObject json) { this.json = json.deepCopy(); }
+    public void replace(JsonObject json) {
+        if(!Objects.equals(this.json.get("type"),json.get("type")))manualFields.clear();
+        this.json=json.deepCopy();manualFields.keySet().removeIf(path->!JsonFieldPaths.exists(this.json,path));
+    }
+    public List<Field> manualFields(){return List.copyOf(manualFields.values());}
+    public void addManualField(Field field){
+        if(field.path().isEmpty()||field.path().equals(List.of("type"))||!Set.of("","gas","infuse_type","pigment","slurry","chemical").contains(field.chemical()))throw new IllegalArgumentException("vjrm.error.field_path");
+        JsonFieldPaths.get(json,field.path());manualFields.put(field.path(),field);
+    }
+    public void removeManualField(List<String> path){manualFields.remove(path);}
     public record NumericField(List<String> path, String value) {
         public String label() { return String.join("/", path); }
     }
@@ -46,6 +58,7 @@ public final class RecipeDocument {
             var known=new HashSet<List<String>>();numericFields().forEach(f->known.add(f.path()));
             for(var change:changes.entrySet()){
                 String value=change.getValue();
+                if(fixedCookingResult()&&change.getKey().equals(List.of("result","count"))&&new java.math.BigDecimal(value).compareTo(java.math.BigDecimal.ONE)!=0)throw new IllegalArgumentException("vjrm.error.fixed_count");
                 if(!known.contains(change.getKey())||value==null||!value.matches("-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?"))throw new IllegalArgumentException("vjrm.error.number");
                 var field=new Field(change.getKey(),false,false);boolean string=get(field).getAsJsonPrimitive().isString();
                 set(field,string?new JsonPrimitive(value):new JsonPrimitive(new java.math.BigDecimal(value)));
@@ -95,12 +108,17 @@ public final class RecipeDocument {
             }
             default -> {
                 j.add("ingredient", stone);
-                if (!type.equals("stonecutting")) { j.addProperty("experience", 0.0); j.addProperty("cookingtime", type.equals("campfire_cooking") ? 600 : 200); }
+                if (!type.equals("stonecutting")) { j.getAsJsonObject("result").remove("count"); j.addProperty("experience", 0.0); j.addProperty("cookingtime", type.equals("campfire_cooking") ? 600 : 200); }
             }
         }
         return new RecipeDocument(j);
     }
-    public List<Field> fields() { List<Field> out = new ArrayList<>(); scan(json, new ArrayList<>(), out); return List.copyOf(out); }
+    public List<Field> fields() {
+        List<Field> out=new ArrayList<>();scan(json,new ArrayList<>(),out);
+        manualFields.keySet().removeIf(path->!JsonFieldPaths.exists(json,path));
+        out.removeIf(f->manualFields.containsKey(f.path()));out.addAll(manualFields.values());
+        return List.copyOf(out);
+    }
     private void scan(JsonElement node, List<String> path, List<Field> out) {
         String label = String.join("/", path).toLowerCase(Locale.ROOT);
         String chemical=ChemicalSupport.kind(node,path,json);
@@ -137,9 +155,7 @@ public final class RecipeDocument {
         }
     }
     public JsonElement get(Field f) {
-        JsonElement e = json;
-        for (String part : f.path()) e = e.isJsonArray() ? e.getAsJsonArray().get(Integer.parseInt(part)) : e.getAsJsonObject().get(part);
-        return e;
+        return JsonFieldPaths.get(json,f.path());
     }
     public void set(Field f, JsonElement value) {
         JsonElement e = json; var p = f.path();
@@ -148,15 +164,17 @@ public final class RecipeDocument {
         if (e.isJsonArray()) e.getAsJsonArray().set(Integer.parseInt(last), value.deepCopy()); else e.getAsJsonObject().add(last, value.deepCopy());
     }
     public int quantity(Field field){
+        if(field.raw())return 1;
         var value=get(field);
         if(value.isJsonObject()){
             var object=value.getAsJsonObject();String key=field.fluid()?"amount":"count";
             if(object.has(key))return object.get(key).getAsInt();
             if(object.has("ingredient")&&object.has("amount"))return object.get("amount").getAsInt();
         }
-        return field.fluid()&&!field.output()?1000:1;
+        return field.fluid()&&!field.output()?81000:1;
     }
     public boolean matches(Field f, Object value, HolderLookup.Provider registries) {
+        if(f.raw())return false;
         if(!f.chemical().isEmpty())return ChemicalSupport.isStack(value)&&values(f,registries).stream().anyMatch(v->ChemicalSupport.stackKind(v).equals(ChemicalSupport.stackKind(value))&&ChemicalSupport.id(v).equals(ChemicalSupport.id(value)));
         try {
             var ops = registries.createSerializationContext(JsonOps.INSTANCE);
@@ -171,7 +189,10 @@ public final class RecipeDocument {
         } catch (RuntimeException ignored) { }
         return false;
     }
+    private boolean fixedCookingResult(){return Set.of("minecraft:smelting","minecraft:blasting","minecraft:smoking","minecraft:campfire_cooking").contains(type());}
     public void accept(Field f, Object value, int count, HolderLookup.Provider registries) {
+        if(f.output()&&f.path().equals(List.of("result"))&&fixedCookingResult()&&count!=1)throw new IllegalArgumentException("vjrm.error.fixed_count");
+        if(f.raw())throw new IllegalArgumentException("vjrm.error.ingredient");
         if(!f.chemical().isEmpty()){accept(f,value,(long)count,registries);return;}
         JsonElement root=get(f).deepCopy(),existing=atom(root);
         boolean nested=root!=existing;
@@ -195,8 +216,8 @@ public final class RecipeDocument {
                 if(changed.has("type") && Set.of("neoforge:tag","neoforge:single").contains(changed.get("type").getAsString()))changed.addProperty("type","neoforge:single");
                 changed.addProperty(changed.has("id")?"id":"fluid",BuiltInRegistries.FLUID.getKey(fluid.getFluid()).toString());
                 changed.remove("components");
-                var encoded=FluidStack.CODEC.encodeStart(registries.createSerializationContext(JsonOps.INSTANCE),fluid.copyWithAmount(count)).getOrThrow().getAsJsonObject();
-                if(encoded.has("components"))changed.add("components",encoded.get("components"));
+                var components=fluid.componentsJson(registries);
+                if(components.isJsonObject()&&!components.getAsJsonObject().entrySet().isEmpty())changed.add("components",components);
                 if(!nested||changed.has("amount"))changed.addProperty("amount",count);
             }else throw new IllegalArgumentException("vjrm.error.ingredient");
             if(nested)root.getAsJsonObject().add("ingredient",changed);else root=changed;
@@ -238,14 +259,12 @@ public final class RecipeDocument {
     }
     private static JsonElement atom(JsonElement value){return value.isJsonObject()&&value.getAsJsonObject().has("ingredient")?value.getAsJsonObject().get("ingredient"):value;}
     public List<?> values(Field f,HolderLookup.Provider registries){
+        if(f.raw())return List.of();
         if(!f.chemical().isEmpty())return ChemicalSupport.values(get(f),f.chemical(),f.output(),registries.createSerializationContext(JsonOps.INSTANCE));
         var ops=registries.createSerializationContext(JsonOps.INSTANCE);JsonElement raw=get(f),leaf=atom(raw);
         int quantity=quantity(f);
         if(f.fluid()){
-            var ingredient=net.neoforged.neoforge.fluids.crafting.FluidIngredient.CODEC.parse(ops,leaf).result();
-            if(ingredient.isPresent()){int amount=quantity;return Arrays.stream(ingredient.get().getStacks()).map(s->s.copyWithAmount(amount)).toList();}
-            String id=leaf.isJsonPrimitive()?leaf.getAsString():leaf.isJsonObject()&&leaf.getAsJsonObject().has("id")?leaf.getAsJsonObject().get("id").getAsString():null;
-            if(id!=null&&BuiltInRegistries.FLUID.containsKey(ResourceLocation.parse(id)))return List.of(new FluidStack(BuiltInRegistries.FLUID.get(ResourceLocation.parse(id)),quantity));
+            return FluidStack.values(leaf,quantity,registries);
         }else{
             if(!f.output()){
                 var ingredient=Ingredient.CODEC.parse(ops,leaf).result();
@@ -258,6 +277,7 @@ public final class RecipeDocument {
         return List.of();
     }
     public void tag(Field f, String tag) {
+        if(f.raw())throw new IllegalArgumentException("vjrm.error.tag");
         if(!f.chemical().isEmpty()){chemicalTag(f,tag,chemicalAmount(f));return;}
         if (f.output() || ResourceLocation.tryParse(tag) == null) throw new IllegalArgumentException("vjrm.error.tag");
         JsonElement root=get(f).deepCopy(),leaf=atom(root);

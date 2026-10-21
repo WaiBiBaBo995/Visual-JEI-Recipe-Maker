@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "vjrm",
+  "version": "${version}",
+  "name": "Visual JEI Recipe Maker",
+  "description": "In-game datapack recipe editor with native recipe previews.",
+  "authors": [
+    "PureNeko"
+  ],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.pureneko.vjrm.Vjrm"
+    ],
+    "client": [
+      "com.pureneko.vjrm.client.VjrmClient"
+    ],
+    "emi": [
+      "com.pureneko.vjrm.client.VjrmEmiPlugin"
+    ],
+    "jei_mod_plugin": [
+      "com.pureneko.vjrm.client.VjrmJeiPlugin"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "jei": "*",
+    "emi": "*"
+  },
+  "mixins": [
+    "vjrm.mixins.json"
+  ],
+  "breaks": {
+    "jei": "<19.27.0.350",
+    "emi": "<1.1.24"
+  }
+}

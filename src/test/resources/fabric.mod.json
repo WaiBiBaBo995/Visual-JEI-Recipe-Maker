@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "vjrm_checks",
+  "version": "1.0.0",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.pureneko.vjrm.PortCheckEntrypoint"
+    ],
+    "client": [
+      "com.pureneko.vjrm.client.PortClientEntrypoint"
+    ],
+    "jei_mod_plugin": [
+      "com.pureneko.vjrm.client.PortRawRecipeChecks"
+    ]
+  },
+  "depends": {
+    "vjrm": "*"
+  }
+}

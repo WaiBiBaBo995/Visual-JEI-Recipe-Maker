@@ -30,7 +30,7 @@ public final class VjrmJeiPlugin implements IModPlugin {
     private static IJeiRuntime runtime;
     private static final JeiPreviewProvider PREVIEW=new JeiPreviewProvider();
     @Override public ResourceLocation getPluginUid() { return ResourceLocation.fromNamespaceAndPath(Vjrm.MOD_ID, "jei_plugin"); }
-    @Override public void onRuntimeAvailable(IJeiRuntime runtime) { VjrmJeiPlugin.runtime = runtime; if(!net.neoforged.fml.ModList.get().isLoaded("emi"))RecipePreview.install(PREVIEW); }
+    @Override public void onRuntimeAvailable(IJeiRuntime runtime) { VjrmJeiPlugin.runtime = runtime; if(!net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("emi"))RecipePreview.install(PREVIEW); }
     @Override public void onRuntimeUnavailable() { runtime = null; RecipePreview.uninstall(PREVIEW); }
     @Override public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGuiScreenHandler(RecipeEditorScreen.class, s -> {
@@ -40,9 +40,9 @@ public final class VjrmJeiPlugin implements IModPlugin {
         registration.addGhostIngredientHandler(RecipeEditorScreen.class, new IGhostIngredientHandler<>() {
             public <I> List<Target<I>> getTargetsTyped(RecipeEditorScreen screen, ITypedIngredient<I> ingredient, boolean start) {
                 List<Target<I>> targets = new ArrayList<>();
-                for (var target : screen.dropTargets(ingredient.getIngredient())) targets.add(new Target<>() {
+                for (var target : screen.dropTargets(FabricFluidBridge.wrap(ingredient.getIngredient()))) targets.add(new Target<>() {
                     public Rect2i getArea() { return target.area(); }
-                    public void accept(I value) { screen.accept(target.field(), value); }
+                    public void accept(I value) { screen.accept(target.field(), FabricFluidBridge.wrap(value)); }
                 });
                 return targets;
             }
@@ -82,7 +82,8 @@ public final class VjrmJeiPlugin implements IModPlugin {
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     public static ResourceLocation sourceId(IRecipeCategory category,Object display){
-        try{return display instanceof RecipeHolder<?> h?h.id():category.getRegistryName(display);}catch(RuntimeException ex){return null;}
+        var id=RecipeIdentities.id(display);if(id!=null)return id;
+        try{return category.getRegistryName(display);}catch(RuntimeException ex){return null;}
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     public static Optional<IRecipeLayoutDrawable<?>> sourceLayout(IRecipeCategory category,Object display){return sourceLayout(category,display,runtime);}

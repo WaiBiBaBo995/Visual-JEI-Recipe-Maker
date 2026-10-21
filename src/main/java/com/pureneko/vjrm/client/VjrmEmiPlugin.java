@@ -4,7 +4,7 @@ import com.pureneko.vjrm.recipe.*;
 import dev.emi.emi.api.*;
 import dev.emi.emi.api.recipe.*;
 import dev.emi.emi.api.stack.*;
-import dev.emi.emi.api.neoforge.NeoForgeEmiStack;
+
 import dev.emi.emi.api.widget.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
+import com.pureneko.vjrm.platform.FluidStack;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -100,10 +100,13 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
     static EmiStack chemicalStack(Object value){
         if(!ChemicalSupport.isStack(value))return EmiStack.EMPTY;value=ChemicalSupport.unwrap(value);
         try{var type=Class.forName("mekanism.client.recipe_viewer.emi.ChemicalEmiStack");for(var constructor:type.getConstructors())if(constructor.getParameterCount()==1&&constructor.getParameterTypes()[0].isInstance(value))return (EmiStack)constructor.newInstance(value);}catch(ReflectiveOperationException ignored){}
-        return net.neoforged.fml.ModList.get().isLoaded("jei")?EmiJemiPreview.stack(value):EmiStack.EMPTY;
+        return net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("jei")?EmiJemiPreview.stack(value):EmiStack.EMPTY;
     }
     private static ResourceLocation sourceId(EmiRecipe recipe){
         var mc=Minecraft.getInstance();if(mc.level==null)return null;
+        if(net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("jei")){
+            var source=EmiJemiPreview.sourceId(recipe);if(source!=null)return source;
+        }
         var backing=recipe.getBackingRecipe();if(backing!=null)return backing.id();
         var id=recipe.getId();return id!=null&&!id.getPath().startsWith("/")&&mc.level.getRecipeManager().byKey(id).isPresent()?id:null;
     }
@@ -113,7 +116,7 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
     public Optional<RecipePreview.Layout> layout(Recipe<?> recipe,RecipePreview.Category preferred,RecipeDocument document){
         var nativeLayout=EmiNativePreview.rebuild(recipe,document);
         if(nativeLayout.isPresent())return nativeLayout;
-        if(net.neoforged.fml.ModList.get().isLoaded("jei"))return EmiJemiPreview.rebuild(recipe,preferred,document);
+        if(net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("jei"))return EmiJemiPreview.rebuild(recipe,preferred,document);
         return Optional.empty();
     }
     public Optional<RecipePreview.Layout> sourceLayout(RecipePreview.Category category,Object display){
@@ -187,7 +190,7 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
         public String fieldPath(){return path;}
         public Stream<RecipePreview.Value> getAllIngredients(){return values.stream().map(RecipePreview.Value::new);}
         public void override(List<?> values){
-            this.values=List.copyOf(values);var stacks=values.stream().map(v->v instanceof ItemStack i?EmiStack.of(i):v instanceof FluidStack f?NeoForgeEmiStack.of(f):chemicalStack(v)).toList();
+            this.values=List.copyOf(values);var stacks=values.stream().map(v->v instanceof ItemStack i?EmiStack.of(i):v instanceof FluidStack f?FabricEmiStack.of(f):chemicalStack(v)).toList();
             widget=new SlotWidget(EmiIngredient.of(stacks,stacks.isEmpty()?1:stacks.getFirst().getAmount()),rect.getX(),rect.getY());
         }
     }
