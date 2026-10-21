@@ -1,62 +1,58 @@
-plugins {
-    id 'java-library'
-    id 'net.neoforged.moddev' version '2.0.107'
-}
-
-version = mod_version
+plugins { id 'net.fabricmc.fabric-loom-remap' version '1.17.20'; id 'java-library' }
+version = "${mod_version}+1.20.1-fabric"
 group = mod_group_id
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
+base.archivesName = 'visual-jei-recipe-maker'
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 repositories {
-    maven { url = 'https://maven.blamejared.com' }
-    maven { url = 'https://maven.terraformersmc.com/releases/' }
+    maven { url='https://modmaven.dev'; content { includeGroup 'mezz.jei'; includeGroup 'net.mezzdev.config' } }
+    maven { url='https://maven.terraformersmc.com/releases/' }
 }
-
-neoForge {
-    version = neo_version
+loom {
     runs {
-        client { client(); gameDirectory = file('run/client') }
-        clientCheck {
-            client(); gameDirectory = file('run/client-check')
-            systemProperty 'vjrm.verifyClient', 'true'
-            if (project.hasProperty('viewer') && project.property('viewer') in ['emi', 'both']) systemProperty 'vjrm.verifyEmi', 'true'
-            if (project.hasProperty('verifyCreate')) systemProperty 'vjrm.verifyCreate', 'true'
-            programArgument '--quickPlaySingleplayer'
-            programArgument 'Vjrm UI Verification'
-        }
-        server { server(); gameDirectory = file('run/server'); programArgument '--nogui' }
-        recipeCheck {
-            type = 'gameTestServer'
-            gameDirectory = file('run/recipe-check')
-            systemProperty 'neoforge.enabledGameTestNamespaces', 'vjrm'
-        }
+        client { client(); runDir 'run/client' }
+        server { server(); runDir 'run/server'; programArg '--nogui' }
+        clientCheck { client(); runDir 'run/client-check'; vmArg '-Dvjrm.verifyClient=true'; if(project.findProperty('viewer') in ['emi','both'])vmArg '-Dvjrm.verifyEmi=true'; programArgs '--quickPlaySingleplayer','Vjrm UI Verification','--width','1280','--height','720' }
+        serverCheck { server(); runDir 'run/server-check'; vmArg '-Dvjrm.verifyServer=true'; programArg '--nogui' }
     }
-    mods { vjrm { sourceSet(sourceSets.main); sourceSet(sourceSets.test) } }
+    mods { vjrm { sourceSet sourceSets.main }; if(project.hasProperty('verifyRuntime'))vjrm_checks { sourceSet sourceSets.test } }
 }
-jar { manifest { attributes('Implementation-Version': project.version) } }
-
 dependencies {
-    if (project.hasProperty('verifyCreate')) runtimeOnly files('build/verification/deps/create-1.21.1-6.0.10.jar')
-    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    compileOnly "dev.emi:emi-neoforge:${emi_version}"
-    if (!project.hasProperty('viewer') || project.property('viewer') != 'emi') runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    if (project.hasProperty('viewer') && project.property('viewer') in ['emi', 'both']) runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    modCompileOnly("mezz.jei:jei-${minecraft_version}-fabric:${jei_version}") { transitive=false }
+    if(!project.hasProperty('withoutJei') && (!project.hasProperty('viewer') || project.property('viewer')!='emi'))modRuntimeOnly("mezz.jei:jei-${minecraft_version}-fabric:${jei_version}") { transitive=false }
+    modCompileOnly "dev.emi:emi-fabric:${emi_version}"
+    if(project.hasProperty('viewer') && project.property('viewer') in ['emi','both'])modRuntimeOnly "dev.emi:emi-fabric:${emi_version}"
+    if(!project.hasProperty('withoutJei') && (!project.hasProperty('viewer') || project.property('viewer')!='emi'))modRuntimeOnly("net.mezzdev.config:mezz_config-1.20.1-fabric:0.6.6") { transitive=false }
 }
-
-sourceSets.main.resources.srcDir 'src/generated/resources'
+processResources { inputs.property 'version',mod_version; filesMatching('fabric.mod.json') { expand version:mod_version } }
+jar { manifest { attributes('Implementation-Version':project.version) } }
+tasks.withType(JavaCompile).configureEach { options.encoding='UTF-8'; options.compilerArgs += ['-Xmaxerrs','500'] }
 sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
+tasks.named('test') { failOnNoDiscoveredTests=false }
 
-tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.named('runServerCheck') { doFirst {
+    if(!project.hasProperty('verifyRuntime'))throw new GradleException('Use -PverifyRuntime')
+    file('build/verification/server/result.txt').delete()
+    def dir=file('run/server-check');dir.mkdirs();new File(dir,'eula.txt').text='eula=true\n'
+    def props=new File(dir,'server.properties');if(!props.exists())props.text='online-mode=false\nserver-port=25579\nlevel-name=world\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=2\nsimulation-distance=2\n'
+} }
+tasks.named('runClientCheck') { doFirst {
+    if(!project.hasProperty('verifyRuntime'))throw new GradleException('Use -PverifyRuntime')
+    file('build/verification/client/result.txt').delete()
+    def world=file('run/client-check/saves/Vjrm UI Verification')
+    if(!world.exists()) {if(!file('run/server-check/world/level.dat').exists())throw new GradleException('Run verifyServer first');copy { from 'run/server-check/world';into world } }
+    def options=file('run/client-check/options.txt');if(!options.exists())options.text='lang:zh_cn\nguiScale:2\nrenderDistance:2\nsimulationDistance:2\nmaxFps:60\nsoundCategory_master:0.0\n'
+} }
+['Server','Client'].each { side -> tasks.register("verify${side}") {
+    dependsOn "run${side}Check"
+    doLast {def result=file("build/verification/${side.toLowerCase()}/result.txt");if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException("${side} checks failed; see ${result}")}
+} }
 
-tasks.register('verifyRecipes') { dependsOn 'runRecipeCheck' }
-tasks.named('runClientCheck') { doFirst { file('build/verification/client/result.txt').delete() } }
-
-tasks.register('verifyClient') {
-    dependsOn 'runClientCheck'
-    doLast {
-        def result = file('build/verification/client/result.txt')
-        if (!result.exists() || !result.text.startsWith('PASS:')) throw new GradleException('Client verification failed; see build/verification/client/result.txt')
-    }
+tasks.matching { it.name in ['runServerCheck','runClientCheck'] }.configureEach {
+    dependsOn tasks.testClasses
+    classpath += sourceSets.test.runtimeClasspath
 }

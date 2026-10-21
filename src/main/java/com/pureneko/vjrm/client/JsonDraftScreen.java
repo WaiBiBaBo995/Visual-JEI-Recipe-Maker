@@ -52,9 +52,9 @@ final class JsonDraftScreen extends Screen {
         if(hasControlDown()&&hasShiftDown()&&key==GLFW.GLFW_KEY_F){format();return true;}
         return super.keyPressed(key,scan,modifiers);
     }
-    @Override public void renderBackground(GuiGraphics g,int x,int y,float pt){g.fill(0,0,width,height,0xEE151922);}
+    @Override public void renderBackground(GuiGraphics g){g.fill(0,0,width,height,0xEE151922);}
     @Override public void render(GuiGraphics g,int x,int y,float pt){
-        super.render(g,x,y,pt);g.drawString(font,title,16,8,0xFFFFFF);
+        renderBackground(g);super.render(g,x,y,pt);g.drawString(font,title,16,8,0xFFFFFF);
         g.drawString(font,font.plainSubstrByWidth(Component.translatable("vjrm.json.help").getString(),width-32),16,24,0xFFAAAAAA);
         int cursor=box.cursor();String before=draft.substring(0,Math.min(cursor,draft.length()));int line=1+(int)before.chars().filter(c->c==10).count(),column=cursor-before.lastIndexOf((char)10);
         String position=line+":"+column;g.drawString(font,position,width-16-font.width(position),8,0xFF9CDCFE);

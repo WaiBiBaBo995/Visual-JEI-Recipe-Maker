@@ -4,5 +4,5 @@ import net.minecraft.resources.ResourceLocation;
 
 public record RecipeField(String name, FieldKind kind, int slot, boolean output) {
     public enum FieldKind { ITEM, FLUID, TEXT, NUMBER, JSON }
-    public ResourceLocation key() { return ResourceLocation.fromNamespaceAndPath("vjrm", name); }
+    public ResourceLocation key() { return new ResourceLocation("vjrm", name); }
 }

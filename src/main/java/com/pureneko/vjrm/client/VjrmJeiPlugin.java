@@ -20,7 +20,7 @@ import mezz.jei.api.gui.builder.ITooltipBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.crafting.RecipeHolder;
+
 import net.minecraft.world.item.crafting.Recipe;
 import com.pureneko.vjrm.recipe.RecipeDocument;
 import java.util.*;
@@ -29,8 +29,8 @@ import java.util.*;
 public final class VjrmJeiPlugin implements IModPlugin {
     private static IJeiRuntime runtime;
     private static final JeiPreviewProvider PREVIEW=new JeiPreviewProvider();
-    @Override public ResourceLocation getPluginUid() { return ResourceLocation.fromNamespaceAndPath(Vjrm.MOD_ID, "jei_plugin"); }
-    @Override public void onRuntimeAvailable(IJeiRuntime runtime) { VjrmJeiPlugin.runtime = runtime; if(!net.neoforged.fml.ModList.get().isLoaded("emi"))RecipePreview.install(PREVIEW); }
+    @Override public ResourceLocation getPluginUid() { return new ResourceLocation(Vjrm.MOD_ID, "jei_plugin"); }
+    @Override public void onRuntimeAvailable(IJeiRuntime runtime) { VjrmJeiPlugin.runtime = runtime; if(!net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("emi"))RecipePreview.install(PREVIEW); }
     @Override public void onRuntimeUnavailable() { runtime = null; RecipePreview.uninstall(PREVIEW); }
     @Override public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGuiScreenHandler(RecipeEditorScreen.class, s -> {
@@ -40,9 +40,9 @@ public final class VjrmJeiPlugin implements IModPlugin {
         registration.addGhostIngredientHandler(RecipeEditorScreen.class, new IGhostIngredientHandler<>() {
             public <I> List<Target<I>> getTargetsTyped(RecipeEditorScreen screen, ITypedIngredient<I> ingredient, boolean start) {
                 List<Target<I>> targets = new ArrayList<>();
-                for (var target : screen.dropTargets(ingredient.getIngredient())) targets.add(new Target<>() {
+                for (var target : screen.dropTargets(FabricFluidBridge.wrap(ingredient.getIngredient()))) targets.add(new Target<>() {
                     public Rect2i getArea() { return target.area(); }
-                    public void accept(I value) { screen.accept(target.field(), value); }
+                    public void accept(I value) { screen.accept(target.field(), FabricFluidBridge.wrap(value)); }
                 });
                 return targets;
             }
@@ -52,15 +52,15 @@ public final class VjrmJeiPlugin implements IModPlugin {
     @Override public void registerAdvanced(IAdvancedRegistration registration) {
         registration.addRecipeButtonFactory(new IRecipeButtonControllerFactory() {
             public <T> IIconButtonController createButtonController(IRecipeLayoutDrawable<T> layout) {
-                RecipeHolder<?> holder = source(layout);
+                Recipe<?> holder = source(layout);
                 if (holder == null) return null;
                 return new IIconButtonController() {
                     public boolean onPress(IJeiUserInput input) {
                         if (!input.isSimulate()) Minecraft.getInstance().execute(() -> {
                             var mc = Minecraft.getInstance();
                             var parent=mc.screen;
-                            RecipeSources.request(holder.id(),document->{
-                                if(mc.screen==parent) mc.setScreen(new RecipeEditorScreen(document,PREVIEW.category(layout.getRecipeCategory()),holder.id()+"_copy",parent,layout.getRecipe()));
+                            RecipeSources.request(holder.getId(),document->{
+                                if(mc.screen==parent) mc.setScreen(new RecipeEditorScreen(document,PREVIEW.category(layout.getRecipeCategory()),holder.getId()+"_copy",parent,layout.getRecipe()));
                             },error->{if(mc.player!=null)mc.player.displayClientMessage(Component.translatable("vjrm.error.copy",Component.translatable(error)),false);});
                         });
                         return true;
@@ -75,14 +75,15 @@ public final class VjrmJeiPlugin implements IModPlugin {
             }
         });
     }
-    private static <T> RecipeHolder<?> source(IRecipeLayoutDrawable<T> layout) {
+    private static <T> Recipe<?> source(IRecipeLayoutDrawable<T> layout) {
         var mc = Minecraft.getInstance(); if (mc.level == null) return null;
         ResourceLocation id = sourceId(layout.getRecipeCategory(),layout.getRecipe());
         return id == null ? null : mc.level.getRecipeManager().byKey(id).orElse(null);
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     public static ResourceLocation sourceId(IRecipeCategory category,Object display){
-        try{return display instanceof RecipeHolder<?> h?h.id():category.getRegistryName(display);}catch(RuntimeException ex){return null;}
+        var id=RecipeIdentities.id(display);if(id!=null)return id;
+        try{return category.getRegistryName(display);}catch(RuntimeException ex){return null;}
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     public static Optional<IRecipeLayoutDrawable<?>> sourceLayout(IRecipeCategory category,Object display){return sourceLayout(category,display,runtime);}
@@ -97,7 +98,7 @@ public final class VjrmJeiPlugin implements IModPlugin {
     @SuppressWarnings({"rawtypes","unchecked"})
     public static List<Template> templates(List<com.pureneko.vjrm.recipe.RecipeSource.Sample> samples){
         if(runtime==null)return List.of();
-        Map<ResourceLocation,String> ids=new HashMap<>();samples.forEach(s->ids.put(ResourceLocation.parse(s.id()),s.serializer()));
+        Map<ResourceLocation,String> ids=new HashMap<>();samples.forEach(s->ids.put(new ResourceLocation(s.id()),s.serializer()));
         Map<String,Template> found=new TreeMap<>();
         for(var category:runtime.getRecipeManager().createRecipeCategoryLookup().get().toList()){
             try(var recipes=runtime.getRecipeManager().createRecipeLookup(category.getRecipeType()).get()){
@@ -118,13 +119,12 @@ public final class VjrmJeiPlugin implements IModPlugin {
         var categories = new ArrayList<mezz.jei.api.recipe.category.IRecipeCategory<?>>();
         if (preferred != null) categories.add(preferred);
         else categories.addAll(runtime.getRecipeManager().createRecipeCategoryLookup().get().toList());
-        var holder = new RecipeHolder<>(ResourceLocation.fromNamespaceAndPath("vjrm", "preview"), recipe);
         for (var c : categories) {
             mezz.jei.api.recipe.category.IRecipeCategory category = c;
-            Object value = category.getRecipeType().getRecipeClass().isInstance(holder) ? holder : recipe;
+            Object value = recipe;
             if (!category.getRecipeType().getRecipeClass().isInstance(value)) continue;
-            // RecipeHolder categories erase their type parameter. Restrict these to the actual serializer family.
-            if(value==holder && !categoryMatches(category,recipe,c==preferred))continue;
+            // Match the real recipe family, including JEI 15's vanilla category aliases.
+            if(!categoryMatches(category,recipe,c==preferred))continue;
             try {
                 if (!category.isHandled(value)) continue;
                 var found = runtime.getRecipeManager().createRecipeLayoutDrawable(category, value, runtime.getJeiHelpers().getFocusFactory().getEmptyFocusGroup());
@@ -158,10 +158,15 @@ public final class VjrmJeiPlugin implements IModPlugin {
         if(uid.getNamespace().equals("create"))return uid.toString().equals(createCategory(serializer));
         if(preferred)return true;
         var type=net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
+        if(type.toString().equals("minecraft:smelting"))return uid.equals(mezz.jei.api.constants.RecipeTypes.SMELTING.getUid());
+        if(type.toString().equals("minecraft:campfire_cooking"))return uid.equals(mezz.jei.api.constants.RecipeTypes.CAMPFIRE_COOKING.getUid());
         return uid.equals(type);
     }
     public static IJeiRuntime runtime() { return runtime; }
     private record EditorProperties(int guiLeft,int guiTop,int guiXSize,int guiYSize,int screenWidth,int screenHeight) implements IGuiProperties {
-        public Class<? extends net.minecraft.client.gui.screens.Screen> screenClass(){return RecipeEditorScreen.class;}
+        public Class<? extends net.minecraft.client.gui.screens.Screen> getScreenClass(){return RecipeEditorScreen.class;}
+        public int getGuiLeft(){return guiLeft;}public int getGuiTop(){return guiTop;}
+        public int getGuiXSize(){return guiXSize;}public int getGuiYSize(){return guiYSize;}
+        public int getScreenWidth(){return screenWidth;}public int getScreenHeight(){return screenHeight;}
     }
 }

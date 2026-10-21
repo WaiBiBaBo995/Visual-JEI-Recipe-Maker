@@ -59,10 +59,10 @@ final class RecipeTypeScreen extends Screen {
             if(button.visible){String label=filtered.get(index).label;button.setMessage(Component.literal(font.plainSubstrByWidth(label,button.getWidth()-12)));button.setTooltip(Tooltip.create(Component.literal(label)));}
         }
     }
-    @Override public boolean mouseScrolled(double x,double y,double dx,double dy){scroll-=Integer.signum((int)Math.signum(dy))*3;filter();return true;}
-    @Override public void renderBackground(GuiGraphics g,int x,int y,float pt){g.fill(0,0,width,height,0xF01B2029);}
+    @Override public boolean mouseScrolled(double x,double y,double dy){scroll-=Integer.signum((int)Math.signum(dy))*3;filter();return true;}
+    @Override public void renderBackground(GuiGraphics g){g.fill(0,0,width,height,0xF01B2029);}
     @Override public void render(GuiGraphics g,int x,int y,float pt){
-        super.render(g,x,y,pt);g.drawCenteredString(font,title,width/2,10,0xFFFFFF);
+        renderBackground(g);super.render(g,x,y,pt);g.drawCenteredString(font,title,width/2,10,0xFFFFFF);
         g.drawString(font,font.plainSubstrByWidth(status.getString(),width-24),12,height-24,0xFFFFFF);
         if(filtered.size()>rows.size())g.drawString(font,(scroll+1)+"–"+Math.min(scroll+rows.size(),filtered.size())+" / "+filtered.size(),width-100,height-12,0xAAAAAA);
     }

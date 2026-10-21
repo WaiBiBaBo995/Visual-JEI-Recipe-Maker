@@ -4,7 +4,7 @@ import com.pureneko.vjrm.recipe.*;
 import dev.emi.emi.api.*;
 import dev.emi.emi.api.recipe.*;
 import dev.emi.emi.api.stack.*;
-import dev.emi.emi.api.neoforge.NeoForgeEmiStack;
+
 import dev.emi.emi.api.widget.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
+import com.pureneko.vjrm.platform.FluidStack;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -91,8 +91,8 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
     }
     public static Object ingredient(EmiIngredient ingredient){
         if(ingredient==null||ingredient.getEmiStacks().isEmpty())return null;
-        var stack=ingredient.getEmiStacks().getFirst();
-        if(stack.getKey() instanceof Fluid fluid){var value=new FluidStack(fluid,(int)Math.max(1,Math.min(Integer.MAX_VALUE,stack.getAmount())));value.applyComponents(stack.getComponentChanges());return value;}
+        var stack=ingredient.getEmiStacks().get(0);
+        if(stack.getKey() instanceof Fluid fluid){var value=new FluidStack(fluid,(int)Math.max(1,Math.min(Integer.MAX_VALUE,stack.getAmount())));value.setTag(stack.getNbt()==null?null:stack.getNbt().copy());return value;}
         try{var value=stack.getClass().getField("ingredient").get(stack);if(ChemicalSupport.isStack(value))return ChemicalSupport.resized(value,stack.getAmount());}catch(ReflectiveOperationException ignored){}
         try{var value=stack.getClass().getMethod("getStack").invoke(stack);if(ChemicalSupport.isStack(value))return value;}catch(ReflectiveOperationException ignored){}
         var item=stack.getItemStack();return item.isEmpty()?null:item;
@@ -100,11 +100,14 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
     static EmiStack chemicalStack(Object value){
         if(!ChemicalSupport.isStack(value))return EmiStack.EMPTY;value=ChemicalSupport.unwrap(value);
         try{var type=Class.forName("mekanism.client.recipe_viewer.emi.ChemicalEmiStack");for(var constructor:type.getConstructors())if(constructor.getParameterCount()==1&&constructor.getParameterTypes()[0].isInstance(value))return (EmiStack)constructor.newInstance(value);}catch(ReflectiveOperationException ignored){}
-        return net.neoforged.fml.ModList.get().isLoaded("jei")?EmiJemiPreview.stack(value):EmiStack.EMPTY;
+        return net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("jei")?EmiJemiPreview.stack(value):EmiStack.EMPTY;
     }
     private static ResourceLocation sourceId(EmiRecipe recipe){
         var mc=Minecraft.getInstance();if(mc.level==null)return null;
-        var backing=recipe.getBackingRecipe();if(backing!=null)return backing.id();
+        if(net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("jei")){
+            var source=EmiJemiPreview.sourceId(recipe);if(source!=null)return source;
+        }
+        var backing=recipe.getBackingRecipe();if(backing!=null)return backing.getId();
         var id=recipe.getId();return id!=null&&!id.getPath().startsWith("/")&&mc.level.getRecipeManager().byKey(id).isPresent()?id:null;
     }
     public RecipePreview.Category category(Object value){
@@ -113,7 +116,7 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
     public Optional<RecipePreview.Layout> layout(Recipe<?> recipe,RecipePreview.Category preferred,RecipeDocument document){
         var nativeLayout=EmiNativePreview.rebuild(recipe,document);
         if(nativeLayout.isPresent())return nativeLayout;
-        if(net.neoforged.fml.ModList.get().isLoaded("jei"))return EmiJemiPreview.rebuild(recipe,preferred,document);
+        if(net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("jei"))return EmiJemiPreview.rebuild(recipe,preferred,document);
         return Optional.empty();
     }
     public Optional<RecipePreview.Layout> sourceLayout(RecipePreview.Category category,Object display){
@@ -122,7 +125,7 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
     }
     @Override public Optional<RecipePreview.Layout> fallbackLayout(Recipe<?> recipe,RecipePreview.Category category,RecipeDocument document){return Optional.of(new DocumentLayout(document,recipe,category));}
     public List<RecipePreview.Template> templates(List<RecipeSource.Sample> samples){
-        var ids=new HashMap<ResourceLocation,String>();samples.forEach(s->ids.put(ResourceLocation.parse(s.id()),s.serializer()));
+        var ids=new HashMap<ResourceLocation,String>();samples.forEach(s->ids.put(new ResourceLocation(s.id()),s.serializer()));
         var found=new TreeMap<String,RecipePreview.Template>();
         for(var recipe:EmiApi.getRecipeManager().getRecipes()){
             var id=sourceId(recipe);String serializer=ids.get(id);
@@ -130,8 +133,8 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
         }
         // JSON-backed serializers remain accessible even if a mod has no dedicated EMI category.
         for(var sample:samples)if(found.values().stream().noneMatch(t->t.serializer().equals(sample.serializer()))){
-            var id=ResourceLocation.parse(sample.serializer());var c=new RecipePreview.Category(null,new RecipePreview.Type(id),Component.literal(sample.serializer()));
-            found.put(sample.serializer(),new RecipePreview.Template(sample.serializer(),ResourceLocation.parse(sample.id()),c,null));
+            var id=new ResourceLocation(sample.serializer());var c=new RecipePreview.Category(null,new RecipePreview.Type(id),Component.literal(sample.serializer()));
+            found.put(sample.serializer(),new RecipePreview.Template(sample.serializer(),new ResourceLocation(sample.id()),c,null));
         }
         return List.copyOf(found.values());
     }
@@ -158,7 +161,7 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
                 }
             }
             for(var field:document.fields()){
-                if(grid&&field.path().getFirst().equals("key"))continue;
+                if(grid&&field.path().get(0).equals("key"))continue;
                 int index=field.output()?output++:input++;
                 add(field.label(),field.output(),field.output()?190+index%4*22:index%8*20,field.output()?index/4*22:index/8*22);
             }
@@ -187,8 +190,8 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
         public String fieldPath(){return path;}
         public Stream<RecipePreview.Value> getAllIngredients(){return values.stream().map(RecipePreview.Value::new);}
         public void override(List<?> values){
-            this.values=List.copyOf(values);var stacks=values.stream().map(v->v instanceof ItemStack i?EmiStack.of(i):v instanceof FluidStack f?NeoForgeEmiStack.of(f):chemicalStack(v)).toList();
-            widget=new SlotWidget(EmiIngredient.of(stacks,stacks.isEmpty()?1:stacks.getFirst().getAmount()),rect.getX(),rect.getY());
+            this.values=List.copyOf(values);var stacks=values.stream().map(v->v instanceof ItemStack i?EmiStack.of(i):v instanceof FluidStack f?FabricEmiStack.of(f):chemicalStack(v)).toList();
+            widget=new SlotWidget(EmiIngredient.of(stacks,stacks.isEmpty()?1:stacks.get(0).getAmount()),rect.getX(),rect.getY());
         }
     }
     private static final class CopyWidget extends Widget {

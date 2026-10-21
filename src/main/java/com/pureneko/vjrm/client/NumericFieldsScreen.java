@@ -53,9 +53,9 @@ final class NumericFieldsScreen extends Screen {
             candidate.setNumbers(edits,minecraft.level.registryAccess());target.replace(candidate.json());changed.run();minecraft.setScreen(parent);
         }catch(RuntimeException ex){status=Component.translatable("vjrm.error.invalid",ex.getMessage()!=null&&ex.getMessage().startsWith("vjrm.error.")?Component.translatable(ex.getMessage()):ex.getMessage());}
     }
-    @Override public boolean mouseScrolled(double x,double y,double dx,double dy){scroll-=(int)Math.signum(dy)*3;filter();return true;}
-    @Override public void renderBackground(GuiGraphics g,int x,int y,float pt){g.fill(0,0,width,height,0xF0151922);}
-    @Override public void render(GuiGraphics g,int x,int y,float pt){super.render(g,x,y,pt);g.drawCenteredString(font,title,width/2,10,0xFFFFFF);g.drawString(font,font.plainSubstrByWidth(status.getString(),width-24),12,height-20,0xFFE3C483);if(y>=height-23)g.renderTooltip(font,font.split(status,width-30),x,y);}
+    @Override public boolean mouseScrolled(double x,double y,double dy){scroll-=(int)Math.signum(dy)*3;filter();return true;}
+    @Override public void renderBackground(GuiGraphics g){g.fill(0,0,width,height,0xF0151922);}
+    @Override public void render(GuiGraphics g,int x,int y,float pt){renderBackground(g);super.render(g,x,y,pt);g.drawCenteredString(font,title,width/2,10,0xFFFFFF);g.drawString(font,font.plainSubstrByWidth(status.getString(),width-24),12,height-20,0xFFE3C483);if(y>=height-23)g.renderTooltip(font,font.split(status,width-30),x,y);}
     @Override public boolean isPauseScreen(){return false;}
     @Override public void onClose(){minecraft.setScreen(parent);}
 }
