@@ -5,7 +5,7 @@ import com.pureneko.vjrm.network.RecipeSourceNetwork;
 import com.pureneko.vjrm.recipe.RecipeDocument;
 import com.pureneko.vjrm.recipe.RecipeSource;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.*;
 import java.util.function.Consumer;
@@ -18,15 +18,15 @@ public final class RecipeSources {
     private static final Map<Integer,CatalogPending> catalogs=new HashMap<>();
     private static int sequence;
     public static boolean available(){var c=Minecraft.getInstance().getConnection();return c!=null&&c.hasChannel(RecipeSourceNetwork.Request.TYPE);}
-    public static void request(ResourceLocation id,Consumer<RecipeDocument> success,Consumer<String> failure){
+    public static void request(Identifier id,Consumer<RecipeDocument> success,Consumer<String> failure){
         if(!available()){failure.accept("vjrm.error.server_source");return;}
         int token=++sequence;pending.put(token,new Pending(System.currentTimeMillis()+15000,success,failure));
-        PacketDistributor.sendToServer(new RecipeSourceNetwork.Request(token,id.toString()));
+        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new RecipeSourceNetwork.Request(token,id.toString()));
     }
     public static void catalog(Consumer<List<RecipeSource.Sample>> success,Consumer<String> failure){
         if(!available()){failure.accept("vjrm.error.server_source");return;}
         int token=++sequence;catalogs.put(token,new CatalogPending(System.currentTimeMillis()+15000,success,failure));
-        PacketDistributor.sendToServer(new RecipeSourceNetwork.CatalogRequest(token));
+        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new RecipeSourceNetwork.CatalogRequest(token));
     }
     public static void receive(RecipeSourceNetwork.Response response){
         var p=pending.remove(response.token());if(p==null)return;

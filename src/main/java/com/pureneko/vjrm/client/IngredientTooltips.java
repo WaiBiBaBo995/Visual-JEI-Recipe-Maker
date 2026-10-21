@@ -6,7 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.fluids.FluidStack;
 import java.util.*;
@@ -26,10 +26,10 @@ final class IngredientTooltips {
         return identify(lines,value);
     }
     static List<Component> identify(List<Component> nativeLines,Object value){
-        var lines=new ArrayList<Component>(nativeLines);ResourceLocation id=null;
+        var lines=new ArrayList<Component>(nativeLines);Identifier id=null;
         if(value instanceof ItemStack item&&!item.isEmpty())id=BuiltInRegistries.ITEM.getKey(item.getItem());
         else if(value instanceof FluidStack fluid&&!fluid.isEmpty())id=BuiltInRegistries.FLUID.getKey(fluid.getFluid());
-        else if(ChemicalSupport.isStack(value))id=ResourceLocation.tryParse(ChemicalSupport.id(value));
+        else if(ChemicalSupport.isStack(value))id=Identifier.tryParse(ChemicalSupport.id(value));
         if(id!=null){
             String key=id.toString(),namespace=id.getNamespace();
             if(lines.stream().noneMatch(c->c.getString().contains(key)))lines.add(Component.literal(key).withStyle(ChatFormatting.DARK_GRAY));

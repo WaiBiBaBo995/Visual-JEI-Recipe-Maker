@@ -1,62 +1,79 @@
 plugins {
     id 'java-library'
-    id 'net.neoforged.moddev' version '2.0.107'
+    id 'net.neoforged.moddev' version '2.0.148'
 }
-
-version = mod_version
+version = "${mod_version}+26.1.2-neoforge"
 group = mod_group_id
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
-repositories {
-    maven { url = 'https://maven.blamejared.com' }
-    maven { url = 'https://maven.terraformersmc.com/releases/' }
-}
-
+base.archivesName = 'visual-jei-recipe-maker'
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+repositories { maven { url = 'https://modmaven.dev' } }
 neoForge {
     version = neo_version
     runs {
         client { client(); gameDirectory = file('run/client') }
         clientCheck {
             client(); gameDirectory = file('run/client-check')
-            systemProperty 'vjrm.verifyClient', 'true'
-            if (project.hasProperty('viewer') && project.property('viewer') in ['emi', 'both']) systemProperty 'vjrm.verifyEmi', 'true'
-            if (project.hasProperty('verifyCreate')) systemProperty 'vjrm.verifyCreate', 'true'
+            systemProperty 'vjrm.verifyClient','true'
             programArgument '--quickPlaySingleplayer'
             programArgument 'Vjrm UI Verification'
+            programArgument '--width'; programArgument '1280'
+            programArgument '--height'; programArgument '720'
         }
         server { server(); gameDirectory = file('run/server'); programArgument '--nogui' }
-        recipeCheck {
-            type = 'gameTestServer'
-            gameDirectory = file('run/recipe-check')
-            systemProperty 'neoforge.enabledGameTestNamespaces', 'vjrm'
-        }
+        serverCheck { server(); gameDirectory = file('run/server-check'); programArgument '--nogui'; systemProperty 'vjrm.verifyServer','true' }
     }
-    mods { vjrm { sourceSet(sourceSets.main); sourceSet(sourceSets.test) } }
+    mods { vjrm { sourceSet(sourceSets.main); if(project.hasProperty("verifyRuntime"))sourceSet(sourceSets.test) } }
+}
+dependencies {
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    if(!project.hasProperty("withoutJei"))runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 }
 jar { manifest { attributes('Implementation-Version': project.version) } }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.compilerArgs += ['-Xmaxerrs','500'] }
 
-dependencies {
-    if (project.hasProperty('verifyCreate')) runtimeOnly files('build/verification/deps/create-1.21.1-6.0.10.jar')
-    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    compileOnly "dev.emi:emi-neoforge:${emi_version}"
-    if (!project.hasProperty('viewer') || project.property('viewer') != 'emi') runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    if (project.hasProperty('viewer') && project.property('viewer') in ['emi', 'both']) runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
-}
-
-sourceSets.main.resources.srcDir 'src/generated/resources'
 sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
+// These sources are in-game integration fixtures, not JUnit test classes.
+tasks.named('test') { failOnNoDiscoveredTests = false }
 
-tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
-
-tasks.register('verifyRecipes') { dependsOn 'runRecipeCheck' }
-tasks.named('runClientCheck') { doFirst { file('build/verification/client/result.txt').delete() } }
-
-tasks.register('verifyClient') {
-    dependsOn 'runClientCheck'
-    doLast {
-        def result = file('build/verification/client/result.txt')
-        if (!result.exists() || !result.text.startsWith('PASS:')) throw new GradleException('Client verification failed; see build/verification/client/result.txt')
+// Verification fixtures are opt-in and excluded from the release JAR.
+tasks.named('runServerCheck') {
+    doFirst {
+        if(!project.hasProperty('verifyRuntime'))throw new GradleException('Use -PverifyRuntime for checks')
+        file('build/verification/server/result.txt').delete()
+        def dir=file('run/server-check'); dir.mkdirs()
+        new File(dir,'eula.txt').text='eula=true\n'
+        def properties=new File(dir,'server.properties')
+        if(!properties.exists())properties.text='online-mode=false\nserver-port=25576\nlevel-name=world\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=2\nsimulation-distance=2\n'
     }
+}
+tasks.named('runClientCheck') {
+    doFirst {
+        if(!project.hasProperty('verifyRuntime'))throw new GradleException('Use -PverifyRuntime for checks')
+        file('build/verification/client/result.txt').delete()
+        def world=file('run/client-check/saves/Vjrm UI Verification')
+        if(!world.exists()) {
+            if(!file('run/server-check/world/level.dat').exists())throw new GradleException('Run verifyServer -PverifyRuntime first')
+            copy { from 'run/server-check/world'; into world }
+        }
+        new File(world,'serverconfig').mkdirs()
+        new File(world,'serverconfig/vjrm-server.toml').text='exportPermissionLevel = 0\n'
+        def options=file('run/client-check/options.txt')
+        if(!options.exists())options.text='lang:zh_cn\nguiScale:2\nrenderDistance:2\nsimulationDistance:2\nmaxFps:60\nsoundCategory_master:0.0\n'
+    }
+}
+['Server','Client'].each { side ->
+    tasks.register("verify${side}") {
+        dependsOn "run${side}Check"
+        doLast {
+            def result=file("build/verification/${side.toLowerCase()}/result.txt")
+            if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException("${side} checks failed; see ${result}")
+        }
+    }
+}
+
+// Resolve the release version into loader metadata before packaging.
+tasks.named('processResources') {
+    inputs.property 'mod_version', mod_version
+    filesMatching('META-INF/*mods.toml') { expand mod_version: mod_version }
 }

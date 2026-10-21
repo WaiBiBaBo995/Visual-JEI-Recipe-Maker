@@ -20,7 +20,7 @@ public final class DatapackExporter {
     }
     public static void writePackMeta(Path root) throws IOException {
         Files.createDirectories(root);
-        Files.writeString(root.resolve("pack.mcmeta"), "{\"pack\":{\"description\":\"VJRM generated recipes\",\"pack_format\":48}}", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        Files.writeString(root.resolve("pack.mcmeta"), "{\"pack\":{\"description\":\"VJRM generated recipes\",\"min_format\":[101,1],\"max_format\":[101,1]}}", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
     public static Path serverDatapackRoot(MinecraftServer server, String name) { return server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("datapacks").resolve(name); }
 }

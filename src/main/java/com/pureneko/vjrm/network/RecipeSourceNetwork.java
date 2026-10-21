@@ -4,7 +4,7 @@ import com.pureneko.vjrm.recipe.RecipeSource;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.*;
 
-@EventBusSubscriber(modid="vjrm", bus=EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid="vjrm")
 public final class RecipeSourceNetwork {
     public record Request(int token, String id) implements CustomPacketPayload {
         public static final Type<Request> TYPE = RecipeSourceNetwork.type("source_request");
@@ -39,22 +39,22 @@ public final class RecipeSourceNetwork {
     }
     private record CachedCatalog(long until,List<RecipeSource.Sample> samples) { }
     private static final Map<net.minecraft.server.MinecraftServer,CachedCatalog> CATALOG_CACHE = new WeakHashMap<>();
-    private static <T extends CustomPacketPayload> CustomPacketPayload.Type<T> type(String path){return new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("vjrm",path));}
+    private static <T extends CustomPacketPayload> CustomPacketPayload.Type<T> type(String path){return new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("vjrm",path));}
     @SubscribeEvent public static void register(RegisterPayloadHandlersEvent event){
         var r=event.registrar("1").optional();
         r.playToServer(Request.TYPE,Request.CODEC,RecipeSourceNetwork::handle);
         r.playToClient(Response.TYPE,Response.CODEC,(p,c)->com.pureneko.vjrm.client.RecipeSources.receive(p));
         r.playToServer(CatalogRequest.TYPE,CatalogRequest.CODEC,(p,c)->{
             if(!(c.player() instanceof ServerPlayer player))return;
-            long now=System.currentTimeMillis();var cached=CATALOG_CACHE.get(player.server);
-            if(cached==null||cached.until<now){cached=new CachedCatalog(now+1000,RecipeSource.catalog(player.server));CATALOG_CACHE.put(player.server,cached);}
+            long now=System.currentTimeMillis();var cached=CATALOG_CACHE.get(player.level().getServer());
+            if(cached==null||cached.until<now){cached=new CachedCatalog(now+1000,RecipeSource.catalog(player.level().getServer()));CATALOG_CACHE.put(player.level().getServer(),cached);}
             c.reply(new Catalog(p.token(),cached.samples));
         });
         r.playToClient(Catalog.TYPE,Catalog.CODEC,(p,c)->com.pureneko.vjrm.client.RecipeSources.receive(p));
     }
     public static void handle(Request request, IPayloadContext context){
         if(!(context.player() instanceof ServerPlayer player))return;
-        try{context.reply(new Response(request.token(),RecipeSource.read(player.server,ResourceLocation.parse(request.id())).json().toString(),""));}
+        try{context.reply(new Response(request.token(),RecipeSource.read(player.level().getServer(),Identifier.parse(request.id())).json().toString(),""));}
         catch(Exception ex){String error=String.valueOf(ex.getMessage());context.reply(new Response(request.token(),"",error.startsWith("vjrm.error.")?error:"vjrm.error.no_source"));}
     }
 }
