@@ -11,6 +11,9 @@ import java.util.*;
 
 /** Optional JEMI boundary: never load this class in a runtime with no JEI API. */
 final class EmiJemiPreview {
+    static net.minecraft.resources.ResourceLocation sourceId(dev.emi.emi.api.recipe.EmiRecipe recipe){
+        return recipe instanceof JemiRecipe<?> jemi?VjrmJeiPlugin.sourceId(jemi.category,jemi.recipe):null;
+    }
     static dev.emi.emi.api.stack.EmiStack stack(Object value){return JemiUtil.getStack(value);}
     static Optional<RecipePreview.Layout> rebuild(Recipe<?> recipe,RecipePreview.Category preferred,RecipeDocument document){
         if(JemiPlugin.runtime==null)return Optional.empty();

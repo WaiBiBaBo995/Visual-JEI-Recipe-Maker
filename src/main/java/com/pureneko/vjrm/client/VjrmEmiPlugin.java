@@ -104,6 +104,9 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
     }
     private static ResourceLocation sourceId(EmiRecipe recipe){
         var mc=Minecraft.getInstance();if(mc.level==null)return null;
+        if(net.minecraftforge.fml.ModList.get().isLoaded("jei")){
+            var source=EmiJemiPreview.sourceId(recipe);if(source!=null)return source;
+        }
         var backing=recipe.getBackingRecipe();if(backing!=null)return backing.getId();
         var id=recipe.getId();return id!=null&&!id.getPath().startsWith("/")&&mc.level.getRecipeManager().byKey(id).isPresent()?id:null;
     }

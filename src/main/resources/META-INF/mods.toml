@@ -3,7 +3,7 @@ loaderVersion="[47,)"
 license="MIT"
 [[mods]]
 modId="vjrm"
-version="${file.jarVersion}"
+version="${mod_version}"
 displayName="Visual JEI Recipe Maker"
 authors="PureNeko"
 description='In-game recipe editor for JEI or EMI on Minecraft 1.20.1 Forge.'

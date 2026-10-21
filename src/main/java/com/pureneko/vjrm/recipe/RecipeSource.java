@@ -26,7 +26,6 @@ public final class RecipeSource {
             var document = new RecipeDocument(JsonParser.parseString(json.toString()).getAsJsonObject());
             // Validate with the current server's registries before transmitting a draft.
             document.decode(server.registryAccess(),id);
-            if(document.fields().isEmpty())throw new IOException("vjrm.error.no_source");
             return document;
         }
     }

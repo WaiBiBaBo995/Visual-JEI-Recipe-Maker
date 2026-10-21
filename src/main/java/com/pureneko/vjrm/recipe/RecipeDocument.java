@@ -11,15 +11,27 @@ import java.util.*;
 
 /** A lossless JSON draft. Only explicitly selected fields are replaced. */
 public final class RecipeDocument {
-    public record Field(List<String> path, boolean fluid, boolean output, String chemical) {
+    public record Field(List<String> path, boolean fluid, boolean output, String chemical, boolean raw) {
+        public Field{path=List.copyOf(path);}
+        public Field(List<String> path,boolean fluid,boolean output,String chemical){this(path,fluid,output,chemical,false);}
         public Field(List<String> path,boolean fluid,boolean output){this(path,fluid,output,"");}
-        public String label() { return String.join("/", path); }
+        public String label() { return JsonFieldPaths.label(path); }
     }
     public static final List<String> TYPES = List.of("crafting_shaped", "crafting_shapeless", "smelting", "blasting", "smoking", "campfire_cooking", "stonecutting", "smithing_transform");
     private JsonObject json;
+    private final Map<List<String>,Field> manualFields=new LinkedHashMap<>();
     public RecipeDocument(JsonObject json) { this.json = json.deepCopy(); }
     public JsonObject json() { return json.deepCopy(); }
-    public void replace(JsonObject json) { this.json = json.deepCopy(); }
+    public void replace(JsonObject json) {
+        if(!Objects.equals(this.json.get("type"),json.get("type")))manualFields.clear();
+        this.json=json.deepCopy();manualFields.keySet().removeIf(path->!JsonFieldPaths.exists(this.json,path));
+    }
+    public List<Field> manualFields(){return List.copyOf(manualFields.values());}
+    public void addManualField(Field field){
+        if(field.path().isEmpty()||field.path().equals(List.of("type"))||!Set.of("","gas","infuse_type","pigment","slurry","chemical").contains(field.chemical()))throw new IllegalArgumentException("vjrm.error.field_path");
+        JsonFieldPaths.get(json,field.path());manualFields.put(field.path(),field);
+    }
+    public void removeManualField(List<String> path){manualFields.remove(path);}
     public record NumericField(List<String> path, String value) {
         public String label() { return String.join("/", path); }
     }
@@ -88,7 +100,12 @@ public final class RecipeDocument {
         }
         return new RecipeDocument(j);
     }
-    public List<Field> fields() { List<Field> out = new ArrayList<>(); scan(json, new ArrayList<>(), out); return List.copyOf(out); }
+    public List<Field> fields() {
+        List<Field> out=new ArrayList<>();scan(json,new ArrayList<>(),out);
+        manualFields.keySet().removeIf(path->!JsonFieldPaths.exists(json,path));
+        out.removeIf(f->manualFields.containsKey(f.path()));out.addAll(manualFields.values());
+        return List.copyOf(out);
+    }
     private void scan(JsonElement node, List<String> path, List<Field> out) {
         String label = String.join("/", path).toLowerCase(Locale.ROOT);
         String chemical=ChemicalSupport.kind(node,path,json);
@@ -125,9 +142,7 @@ public final class RecipeDocument {
         }
     }
     public JsonElement get(Field f) {
-        JsonElement e = json;
-        for (String part : f.path()) e = e.isJsonArray() ? e.getAsJsonArray().get(Integer.parseInt(part)) : e.getAsJsonObject().get(part);
-        return e;
+        return JsonFieldPaths.get(json,f.path());
     }
     public void set(Field f, JsonElement value) {
         JsonElement e = json; var p = f.path();
@@ -136,6 +151,7 @@ public final class RecipeDocument {
         if (e.isJsonArray()) e.getAsJsonArray().set(Integer.parseInt(last), value.deepCopy()); else e.getAsJsonObject().add(last, value.deepCopy());
     }
     public int quantity(Field field){
+        if(field.raw())return 1;
         var value=get(field);
         if(value.isJsonObject()){
             var object=value.getAsJsonObject();String key=field.fluid()?"amount":"count";
@@ -146,6 +162,7 @@ public final class RecipeDocument {
         return field.fluid()&&!field.output()?1000:1;
     }
     public boolean matches(Field f, Object value, net.minecraft.core.RegistryAccess registries) {
+        if(f.raw())return false;
         if(!f.chemical().isEmpty())return ChemicalSupport.isStack(value)&&values(f,registries).stream().anyMatch(v->ChemicalSupport.stackKind(v).equals(ChemicalSupport.stackKind(value))&&ChemicalSupport.id(v).equals(ChemicalSupport.id(value)));
         try {
 
@@ -161,6 +178,7 @@ public final class RecipeDocument {
         return false;
     }
     public void accept(Field f, Object value, int count, net.minecraft.core.RegistryAccess registries) {
+        if(f.raw())throw new IllegalArgumentException("vjrm.error.ingredient");
         if(!f.chemical().isEmpty()){accept(f,value,(long)count,registries);return;}
         JsonElement root=get(f).deepCopy(),existing=atom(root);
         boolean nested=root!=existing;
@@ -226,6 +244,7 @@ public final class RecipeDocument {
     }
     private static JsonElement atom(JsonElement value){return value.isJsonObject()&&value.getAsJsonObject().has("ingredient")?value.getAsJsonObject().get("ingredient"):value;}
     public List<?> values(Field f,net.minecraft.core.RegistryAccess registries){
+        if(f.raw())return List.of();
         if(!f.chemical().isEmpty())return ChemicalSupport.values(get(f),f.chemical(),f.output(),com.mojang.serialization.JsonOps.INSTANCE);
         JsonElement raw=get(f),leaf=atom(raw);int quantity=quantity(f);
         if(f.fluid()){
@@ -254,6 +273,7 @@ public final class RecipeDocument {
         return List.of();
     }
     public void tag(Field f, String tag) {
+        if(f.raw())throw new IllegalArgumentException("vjrm.error.tag");
         if(!f.chemical().isEmpty()){chemicalTag(f,tag,chemicalAmount(f));return;}
         if (f.output() || ResourceLocation.tryParse(tag) == null) throw new IllegalArgumentException("vjrm.error.tag");
         JsonElement root=get(f).deepCopy(),leaf=atom(root);

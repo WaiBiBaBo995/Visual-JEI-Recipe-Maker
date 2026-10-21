@@ -8,6 +8,9 @@ import com.pureneko.vjrm.recipe.RecipeDocument;
 import static com.pureneko.vjrm.client.EditorFeatureChecks.*;
 
 public final class PortJemiChecks {
+    public static dev.emi.emi.api.recipe.EmiRecipe rawRecipe(){
+        return dev.emi.emi.api.EmiApi.getRecipeManager().getRecipes().stream().filter(dev.emi.emi.jemi.JemiRecipe.class::isInstance).map(r->(dev.emi.emi.jemi.JemiRecipe<?>)r).filter(r->r.category.getRecipeType().getUid().toString().equals("vjrm_verify:raw_recipe")).findFirst().orElseThrow(()->new AssertionError("Raw recipe category was not converted by JEMI"));
+    }
     public static void run(){
         var recipe=EmiApi.getRecipeManager().getRecipes().stream().filter(r->r instanceof JemiRecipe&&r.getCategory().getId().toString().equals("vjrm_verify:machine")).findFirst().orElseThrow(()->new AssertionError("JEI compatibility recipe missing from EMI"));
         RecipeSources.request(recipe.getBackingRecipe().getId(),document->{try{

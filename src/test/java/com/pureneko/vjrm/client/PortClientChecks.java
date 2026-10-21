@@ -53,6 +53,7 @@ public final class PortClientChecks {
         try{
             Files.createDirectories(OUT);
             if(stage==9){if((boolean)Class.forName("com.pureneko.vjrm.client.EmiCopyChecks").getMethod("rendered",Path.class).invoke(null,OUT))finish();return;}
+            if(stage==10){var checks=Class.forName("com.pureneko.vjrm.client.RawRecipeCopyChecks");var method=checks.getDeclaredMethod("rendered",Path.class);method.setAccessible(true);if((boolean)method.invoke(null,OUT))finish();return;}
             if(stage==5){capture("forge-editor.png");viewerReady=false;
                 if(net.minecraftforge.fml.ModList.get().isLoaded("emi"))Class.forName("com.pureneko.vjrm.client.PortEmiChecks").getMethod("run").invoke(null);
                 else Class.forName("com.pureneko.vjrm.client.PortJeiChecks").getMethod("run").invoke(null);
@@ -64,7 +65,7 @@ public final class PortClientChecks {
             else capture("forge-mekanism-ui.png");
             if(stage<8&&Boolean.getBoolean("vjrm.verifyMekanism")){viewerReady=false;Class.forName("com.pureneko.vjrm.client.PortMekanismClientChecks").getMethod("run").invoke(null);stage=8;frames=0;return;}
             if(net.minecraftforge.fml.ModList.get().isLoaded("emi")){Class.forName("com.pureneko.vjrm.client.EmiCopyChecks").getMethod("start").invoke(null);stage=9;frames=0;return;}
-            finish();
+            var checks=Class.forName("com.pureneko.vjrm.client.RawRecipeCopyChecks");var start=checks.getDeclaredMethod("start");start.setAccessible(true);start.invoke(null);stage=10;frames=0;
         }catch(Throwable ex){fail(ex);}
     }
     private static void capture(String name)throws Exception{try(var image=Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())){image.writeToFile(OUT.resolve(name));}}

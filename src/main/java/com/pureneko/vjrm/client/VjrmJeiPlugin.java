@@ -82,7 +82,8 @@ public final class VjrmJeiPlugin implements IModPlugin {
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     public static ResourceLocation sourceId(IRecipeCategory category,Object display){
-        try{return display instanceof Recipe<?> h?h.getId():category.getRegistryName(display);}catch(RuntimeException ex){return null;}
+        var id=RecipeIdentities.id(display);if(id!=null)return id;
+        try{return category.getRegistryName(display);}catch(RuntimeException ex){return null;}
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     public static Optional<IRecipeLayoutDrawable<?>> sourceLayout(IRecipeCategory category,Object display){return sourceLayout(category,display,runtime);}

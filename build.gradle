@@ -32,7 +32,7 @@ minecraft {
 repositories {
     maven { url = file('build/verification/maven'); content { includeGroup 'mekanism' } }
     maven { url = 'https://modmaven.dev'; content { includeGroup 'mekanism' }; metadataSources { mavenPom(); artifact() } }
-    maven { url = 'https://maven.blamejared.com' }
+    maven { url = 'https://modmaven.dev' }
     maven { url = 'https://maven.terraformersmc.com/releases/' }
 }
 dependencies {
@@ -62,3 +62,9 @@ tasks.register('verifyClient') {
     doLast { def result=file('build/verification/client/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException('Client verification failed; see build/verification/client/result.txt') }
 }
 tasks.matching { it.name == 'runClient' }.configureEach {doFirst{if(project.hasProperty('verifyClient'))file('build/verification/client/result.txt').delete()}}
+
+// Resolve the release version into loader metadata before packaging.
+tasks.named('processResources') {
+    inputs.property 'mod_version', mod_version
+    filesMatching('META-INF/*mods.toml') { expand mod_version: mod_version }
+}

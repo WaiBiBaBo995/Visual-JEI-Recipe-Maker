@@ -84,9 +84,10 @@ public final class RecipeEditorScreen extends Screen {
         button(x+96,y+22,44,"numbers",b->minecraft.setScreen(new NumericFieldsScreen(this,document,()->{refresh();status=t("changed","JSON");})));
         typeButton.setTooltip(Tooltip.create(t("type.name",document.type())));
         idBox=addRenderableWidget(new EditBox(font,x+144,y+22,w-144,18,t("recipe_id")));idBox.setMaxLength(200);idBox.setValue(recipeId);idBox.setResponder(s->recipeId=s);idBox.setTooltip(Tooltip.create(t("recipe_id")));
-        fieldButton=button(x,y+60,w-64,"field",b->cycleField());
+        fieldButton=button(x,y+60,w-128,"field",b->cycleField());
+        button(x+w-124,y+60,60,"manual.open",b->openManualFields());
         button(x+w-60,y+60,60,"bind",b->{if(selectedSlot!=null && selected!=null){manualBindings.put(drawSlots().indexOf(selectedSlot),selected.label());repeatedBindings.remove(selected.label());bindings.put(selectedSlot,selected);status=t("bound",selected.label());}else status=t("select_slot");});
-        valueBox=addRenderableWidget(new EditBox(font,x,c+22,w-53,18,t("value")));valueBox.setMaxLength(256);valueBox.setValue(value);valueBox.setHint(t("value"));valueBox.setResponder(s->value=s);
+        valueBox=addRenderableWidget(new EditBox(font,x,c+22,w-53,18,t("value")));valueBox.setMaxLength(com.pureneko.vjrm.recipe.RecipeSource.MAX_JSON);valueBox.setValue(value);valueBox.setHint(t("value"));valueBox.setResponder(s->value=s);
         countBox=addRenderableWidget(new EditBox(font,x+w-49,c+22,49,18,t("amount")));countBox.setMaxLength(19);countBox.setValue(amount);countBox.setResponder(s->amount=s);
         int bw=(w-4)/2;
         button(x,c+44,bw,"apply",b->applyValue());
@@ -150,8 +151,8 @@ public final class RecipeEditorScreen extends Screen {
         bindCreateProcessing(slots);
         for(int i=0;i<slots.size();i++){
             var s=slots.get(i);String explicit=manualBindings.get(i);
-            if(s.fieldPath()!=null){if(s.fieldPath().startsWith("$crafting/"))bindings.put(s,new Field(List.of("$crafting",s.fieldPath().substring(10)),false,false));else findField(s.fieldPath()).ifPresent(f->bindings.put(s,f));continue;}
             if(explicit!=null){fields.stream().filter(f->f.label().equals(explicit)).findFirst().ifPresent(f->bindings.put(s,f));continue;}
+            if(s.fieldPath()!=null){if(s.fieldPath().startsWith("$crafting/"))bindings.put(s,new Field(List.of("$crafting",s.fieldPath().substring(10)),false,false));else findField(s.fieldPath()).ifPresent(f->bindings.put(s,f));continue;}
             if(bindings.containsKey(s)||s.getRole()==Role.CATALYST||s.getRole()==Role.RENDER_ONLY)continue;
             if(usingSourceLayout&&sourceBindings.containsKey(i)){
                 String path=sourceBindings.get(i);fields.stream().filter(f->f.label().equals(path)).findFirst().ifPresent(f->bindings.put(s,f));continue;
@@ -206,14 +207,31 @@ public final class RecipeEditorScreen extends Screen {
     }
     private static int craftingIndex(int i,int w,int h){if(w==1)return h==1?4:i*3+1;if(h==1)return i+3;if(w==2)return i+(i>1?1:0)+(i>3?1:0);return h==2?i+3:i;}
     private void cycleField(){if(!fields.isEmpty()){selected=fields.get((fields.indexOf(selected)+1)%fields.size());updateField();}}
-    private void updateField(){if(fieldButton!=null)fieldButton.setMessage(selected==null?t("field"):Component.literal(font.plainSubstrByWidth(selected.label(),panelWidth()-92)));}
+    private void openManualFields(){
+        int index=selectedSlot==null?-1:drawSlots().indexOf(selectedSlot);
+        Field initial=selectedSlot==null?selected:bindings.get(selectedSlot);
+        minecraft.setScreen(new ManualFieldScreen(this,document,initial,field->{
+            document.addManualField(field);selected=field;
+            if(index>=0)manualBindings.put(index,field.label());
+            status=t("manual.added","/"+field.label());
+        },path->{
+            document.removeManualField(path);
+            manualBindings.values().removeIf(label->label.equals(com.pureneko.vjrm.recipe.JsonFieldPaths.label(path)));
+            selected=null;status=t("manual.removed");
+        }));
+    }
+    private void updateField(){
+        if(fieldButton!=null){fieldButton.setMessage(selected==null?t("field"):Component.literal(font.plainSubstrByWidth(selected.label(),fieldButton.getWidth()-10)));fieldButton.setTooltip(selected==null?null:Tooltip.create(Component.literal("/"+selected.label())));}
+        if(countBox!=null)countBox.active=selected==null||!selected.raw();
+        if(selected!=null&&selected.raw()&&valueBox!=null)valueBox.setValue(document.get(selected).toString());
+    }
     @SuppressWarnings("removal") private Rect2i screenRect(Slot slot){var r=slot.getRect();return new Rect2i(previewX+Math.round(r.getX()*previewScale),previewY+Math.round(r.getY()*previewScale),Math.max(1,Math.round(r.getWidth()*previewScale)),Math.max(1,Math.round(r.getHeight()*previewScale)));}
     public List<DropTarget> dropTargets(Object ingredient){
         List<DropTarget> out=new ArrayList<>();for(var e:bindings.entrySet())if(accepts(e.getValue(),ingredient))out.add(new DropTarget(physical(screenRect(e.getKey())),e.getValue()));
         if(selected!=null && accepts(selected,ingredient))out.add(new DropTarget(physical(new Rect2i(panelX()+8,controlsY()+22,panelWidth()-69,18)),selected));return out;
     }
     private Rect2i physical(Rect2i r){return new Rect2i(Math.round(r.getX()*uiScale),Math.round(r.getY()*uiScale),Math.max(1,Math.round(r.getWidth()*uiScale)),Math.max(1,Math.round(r.getHeight()*uiScale)));}
-    private boolean accepts(Field f,Object ingredient){return !f.chemical().isEmpty()?ChemicalSupport.isStack(ingredient)&&f.chemical().equals(ChemicalSupport.stackKind(ingredient)):f.fluid()?ingredient instanceof FluidStack:ingredient instanceof ItemStack;}
+    private boolean accepts(Field f,Object ingredient){return !f.raw()&&(!f.chemical().isEmpty()?ChemicalSupport.isStack(ingredient)&&f.chemical().equals(ChemicalSupport.stackKind(ingredient)):f.fluid()?ingredient instanceof FluidStack:ingredient instanceof ItemStack);}
     public void accept(Field field,Object ingredient){accept(field,ingredient,false);}
     private void accept(Field field,Object ingredient,boolean editQuantity){
         try{long n=editQuantity?Long.parseLong(amount):field.path().get(0).equals("$crafting")?1:!field.chemical().isEmpty()?document.chemicalAmount(field):document.quantity(field);if(n<1)throw new IllegalArgumentException("vjrm.error.amount");var old=document.json();
@@ -228,6 +246,12 @@ public final class RecipeEditorScreen extends Screen {
     }
     private void applyValue(){
         if(selected==null)return;
+        if(selected.raw()){
+            var before=document.json();
+            try{document.set(selected,JsonSyntax.parseElement(value));document.decode(minecraft.level.registryAccess());refresh();status=t("changed",selected.label());}
+            catch(RuntimeException ex){document.replace(before);status=t("error.invalid",ex.getMessage());}
+            return;
+        }
         try{if(!selected.chemical().isEmpty()){
             if(value.startsWith("#")){var before=document.json();try{document.chemicalTag(selected,value.substring(1),Long.parseLong(amount));document.decode(minecraft.level.registryAccess());}catch(RuntimeException ex){document.replace(before);throw ex;}refresh();status=t("changed",selected.label());}
             else accept(selected,ChemicalSupport.fromId(value,1,selected.chemical(),com.mojang.serialization.JsonOps.INSTANCE),true);
@@ -271,7 +295,7 @@ public final class RecipeEditorScreen extends Screen {
             if(slot>=0){draggedInventory=minecraft.player.getInventory().getItem(slot).copy();dragStartX=x;dragStartY=y;inventoryDragging=false;return true;}
         }
         if(layout!=null)for(var slot:drawSlots())if(screenRect(slot).contains((int)x,(int)y)){
-            selectedSlot=slot;if(bindings.containsKey(slot)){selected=bindings.get(slot);updateField();slot.getDisplayedIngredient().ifPresent(i->{Object v=i.getIngredient();if(v instanceof ItemStack s){valueBox.setValue(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(s.getItem()).toString());countBox.setValue(Integer.toString(s.getCount()));}else if(v instanceof FluidStack f){valueBox.setValue(net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(f.getFluid()).toString());countBox.setValue(Integer.toString(f.getAmount()));}else if(ChemicalSupport.isStack(v)){valueBox.setValue(ChemicalSupport.id(v));countBox.setValue(Long.toString(document.chemicalAmount(selected)));}});if(button==1)remove(x,y);else status=t("selected",selected.label());}else {Component reason=t(slot.getRole()==Role.CATALYST?"error.catalyst":slot.getRole()==Role.RENDER_ONLY?"error.display_slot":"unbound");if(button==1)reject(reason,x,y);else status=reason;}return true;
+            selectedSlot=slot;if(bindings.containsKey(slot)){selected=bindings.get(slot);updateField();if(!selected.raw())slot.getDisplayedIngredient().ifPresent(i->{Object v=i.getIngredient();if(v instanceof ItemStack s){valueBox.setValue(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(s.getItem()).toString());countBox.setValue(Integer.toString(s.getCount()));}else if(v instanceof FluidStack f){valueBox.setValue(net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(f.getFluid()).toString());countBox.setValue(Integer.toString(f.getAmount()));}else if(ChemicalSupport.isStack(v)){valueBox.setValue(ChemicalSupport.id(v));countBox.setValue(Long.toString(document.chemicalAmount(selected)));}});if(button==1)remove(x,y);else status=t("selected",selected.label());}else {Component reason=t(slot.getRole()==Role.CATALYST?"error.catalyst":slot.getRole()==Role.RENDER_ONLY?"error.display_slot":"unbound");if(button==1)reject(reason,x,y);else status=reason;}return true;
         }return super.mouseClicked(x,y,button);
     }
     private Rect2i inventoryRect(int index){
@@ -337,7 +361,7 @@ public final class RecipeEditorScreen extends Screen {
             for(var slot:drawSlots())if(screenRect(slot).contains(mx,my)){
                 var lines=new ArrayList<Component>(slot.tooltip());
                 var binding=bindings.get(slot);
-                if(binding!=null)lines.add(t("bound",binding.label()).copy().withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+                if(binding!=null)lines.add(t("bound",binding.label()).copy().withStyle(net.minecraft.ChatFormatting.GOLD));
                 if(!lines.isEmpty())g.renderComponentTooltip(font,lines,physicalX,physicalY);
                 break;
             }
