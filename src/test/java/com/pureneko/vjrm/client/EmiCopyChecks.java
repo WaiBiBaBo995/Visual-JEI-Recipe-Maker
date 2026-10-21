@@ -23,12 +23,13 @@ public final class EmiCopyChecks {
         EmiConfig.showRecipeDecorators=false;
         VjrmClientConfig.COPY_BUTTON.set(false);VjrmClientConfig.EMI_COPY_BUTTON.set(true);
         var recipe=EmiApi.getRecipeManager().getRecipes().stream().filter(r->r.getId()!=null&&r.getId().toString().equals("vjrm:source_check")).findFirst().orElseThrow(()->new AssertionError("No real source recipe in EMI"));
+        if(net.neoforged.fml.ModList.get().isLoaded("jei"))recipe=(dev.emi.emi.api.recipe.EmiRecipe)Class.forName("com.pureneko.vjrm.client.EmiJemiChecks").getMethod("rawRecipe").invoke(null);
         EmiApi.displayRecipe(recipe);
         check(Minecraft.getInstance().screen instanceof RecipeScreen,"EMI did not open its recipe page");
         page=(RecipeScreen)Minecraft.getInstance().screen;
         var f=RecipeScreen.class.getDeclaredField("currentPage");f.setAccessible(true);
         @SuppressWarnings("unchecked") var groups=(List<WidgetGroup>)f.get(page);
-        group=groups.stream().filter(g->g.recipe==recipe).findFirst().orElseThrow();
+        var selectedRecipe=recipe;group=groups.stream().filter(g->g.recipe==selectedRecipe).findFirst().orElseThrow();
         var buttons=group.widgets.stream().filter(w->w.getClass().getSimpleName().equals("CopyWidget")).toList();
         check(buttons.size()==1,"Production EMI page must have exactly one VJRM button, got "+buttons.size());
         copy=buttons.get(0);var b=copy.getBounds();check(b.width()==12&&b.height()==12,"Old JEI visibility setting hides the EMI copy button");
@@ -42,6 +43,10 @@ public final class EmiCopyChecks {
     }
     public static boolean rendered(Path out)throws Exception{
         if(++frames<20)return false;
+        if(phase==3){
+            try(var image=Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())){image.writeToFile(out.resolve("manual-fields.png"));}
+            return true;
+        }
         if(phase==0){
             try(var image=Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())){image.writeToFile(out.resolve("emi-copy-page.png"));}
             var b=copy.getBounds();
@@ -64,7 +69,7 @@ public final class EmiCopyChecks {
         for(String name:new String[]{"xpos","ypos"}){var f=MouseHandler.class.getDeclaredField(name);f.setAccessible(true);f.setDouble(mouse,name.equals("xpos")?previousX:previousY);}
         VjrmClientConfig.COPY_BUTTON.set(previousJei);VjrmClientConfig.EMI_COPY_BUTTON.set(previousEmi);VjrmClientConfig.SPEC.save();
         System.out.println("PASS real EMI recipe-page copy click with dev decorators disabled, one nonoverlapping button, visibility toggle, source name and ingredient tooltip");
-        return true;
+        ManualFieldChecks.preview();phase=3;frames=0;return false;
     }
     private static void hover(int x,int y)throws Exception{
         var mc=Minecraft.getInstance();var window=mc.getWindow();

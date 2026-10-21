@@ -3,7 +3,7 @@ loaderVersion="[4,)"
 license="MIT"
 [[mods]]
 modId="vjrm"
-version="${file.jarVersion}"
+version="${mod_version}"
 displayName="Visual JEI Recipe Maker"
 description='In-game datapack recipe authoring with JEI or EMI.'
 authors="PureNeko"

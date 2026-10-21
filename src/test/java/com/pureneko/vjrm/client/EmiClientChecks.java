@@ -50,7 +50,8 @@ public final class EmiClientChecks {
     @SubscribeEvent public static void rendered(RenderFrameEvent.Post event){
         if(!Boolean.getBoolean("vjrm.verifyEmi")||done||stage<2||++frames<20)return;
         try{
-            if(stage==6){if(EmiCopyChecks.rendered(OUT))finishVerified();return;}
+            if(stage==6){if(EmiCopyChecks.rendered(OUT)){if(Boolean.getBoolean("vjrm.verifyAstral")){AstralEmiCopyChecks.start();stage=7;frames=0;}else finishVerified();}return;}
+            if(stage==7){if(AstralEmiCopyChecks.rendered(OUT))finishVerified();return;}
             if(stage==3){
                 EditorFeatureChecks.check(VerificationEmiPlugin.backgroundDraws>0,"Native EMI background was never drawn");
                 screenshot("emi-native-machine.png");

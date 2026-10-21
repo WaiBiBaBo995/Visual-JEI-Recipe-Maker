@@ -10,6 +10,9 @@ import static com.pureneko.vjrm.client.EditorFeatureChecks.*;
 
 /** Loaded only with both APIs present. Exercises EMI's real JEI compatibility conversion. */
 public final class EmiJemiChecks {
+    public static dev.emi.emi.api.recipe.EmiRecipe rawRecipe(){
+        return dev.emi.emi.api.EmiApi.getRecipeManager().getRecipes().stream().filter(dev.emi.emi.jemi.JemiRecipe.class::isInstance).map(r->(dev.emi.emi.jemi.JemiRecipe<?>)r).filter(r->r.category.getRecipeType().getUid().toString().equals("vjrm_verify:raw_recipe")).findFirst().orElseThrow(()->new AssertionError("Raw recipe category was not converted by JEMI"));
+    }
     public static void run()throws Exception{
         var mc=Minecraft.getInstance();
         var converted=EmiApi.getRecipeManager().getRecipes().stream().filter(JemiRecipe.class::isInstance).map(r->(JemiRecipe<?>)r).filter(r->r.category.getRecipeType().getUid().toString().equals("vjrm_verify:test_machine")).findFirst().orElseThrow(()->new AssertionError("JEMI did not convert the test JEI category"));

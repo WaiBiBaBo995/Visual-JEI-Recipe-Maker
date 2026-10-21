@@ -43,12 +43,18 @@ public final class JsonSyntax {
         }
         return List.copyOf(out);
     }
-    @SuppressWarnings("deprecation") public static JsonObject parse(String text){
+    public static JsonObject parse(String text){
+        var value=parseElement(text);
+        if(!value.isJsonObject())throw new JsonSyntaxException("Recipe JSON must be an object");
+        return value.getAsJsonObject();
+    }
+    @SuppressWarnings("deprecation") public static JsonElement parseElement(String text){
         try(var reader=new JsonReader(new StringReader(text))){
-            reader.setLenient(false);JsonElement value=Streams.parse(reader);
+            reader.setLenient(false);
+            if(reader.peek()==JsonToken.END_DOCUMENT)throw new JsonSyntaxException("JSON value required");
+            JsonElement value=Streams.parse(reader);
             if(reader.peek()!=JsonToken.END_DOCUMENT)throw new JsonSyntaxException("Trailing content at "+reader);
-            if(!value.isJsonObject())throw new JsonSyntaxException("Recipe JSON must be an object");
-            return value.getAsJsonObject();
+            return value;
         }catch(java.io.IOException ex){throw new JsonSyntaxException(ex.getMessage(),ex);}
     }
     public static boolean inString(String text,int cursor){

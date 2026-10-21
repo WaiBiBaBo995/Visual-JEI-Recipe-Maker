@@ -9,7 +9,7 @@ group = mod_group_id
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 repositories {
-    maven { url = 'https://maven.blamejared.com' }
+    maven { url = 'https://modmaven.dev' }
     maven { url = 'https://maven.terraformersmc.com/releases/' }
 }
 
@@ -22,6 +22,7 @@ neoForge {
             systemProperty 'vjrm.verifyClient', 'true'
             if (project.hasProperty('viewer') && project.property('viewer') in ['emi', 'both']) systemProperty 'vjrm.verifyEmi', 'true'
             if (project.hasProperty('verifyCreate')) systemProperty 'vjrm.verifyCreate', 'true'
+            if (project.hasProperty('verifyAstral')) systemProperty 'vjrm.verifyAstral', 'true'
             programArgument '--quickPlaySingleplayer'
             programArgument 'Vjrm UI Verification'
         }
@@ -37,6 +38,7 @@ neoForge {
 jar { manifest { attributes('Implementation-Version': project.version) } }
 
 dependencies {
+    if (project.hasProperty('verifyAstral')) runtimeOnly fileTree('build/verification/deps/astral') { include '*.jar' }
     if (project.hasProperty('verifyCreate')) runtimeOnly files('build/verification/deps/create-1.21.1-6.0.10.jar')
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
     compileOnly "dev.emi:emi-neoforge:${emi_version}"
@@ -59,4 +61,10 @@ tasks.register('verifyClient') {
         def result = file('build/verification/client/result.txt')
         if (!result.exists() || !result.text.startsWith('PASS:')) throw new GradleException('Client verification failed; see build/verification/client/result.txt')
     }
+}
+
+// Resolve the release version into loader metadata before packaging.
+tasks.named('processResources') {
+    inputs.property 'mod_version', mod_version
+    filesMatching('META-INF/*mods.toml') { expand mod_version: mod_version }
 }
