@@ -2,15 +2,15 @@ package com.pureneko.vjrm.client;
 
 import com.google.gson.*;
 import com.pureneko.vjrm.recipe.RecipeDocument;
-import net.minecraft.Util;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.util.Util;
+import com.pureneko.vjrm.client.LegacyGraphics;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import java.util.function.Consumer;
 
-final class JsonDraftScreen extends Screen {
+final class JsonDraftScreen extends VjrmScreen {
     private static final Gson PRETTY=new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private final Screen parent;
     private final Consumer<JsonObject> save;
@@ -52,8 +52,8 @@ final class JsonDraftScreen extends Screen {
         if(hasControlDown()&&hasShiftDown()&&key==GLFW.GLFW_KEY_F){format();return true;}
         return super.keyPressed(key,scan,modifiers);
     }
-    @Override public void renderBackground(GuiGraphics g,int x,int y,float pt){g.fill(0,0,width,height,0xEE151922);}
-    @Override public void render(GuiGraphics g,int x,int y,float pt){
+    @Override public void renderBackground(LegacyGraphics g,int x,int y,float pt){g.fill(0,0,width,height,0xEE151922);}
+    @Override public void render(LegacyGraphics g,int x,int y,float pt){
         super.render(g,x,y,pt);g.drawString(font,title,16,8,0xFFFFFF);
         g.drawString(font,font.plainSubstrByWidth(Component.translatable("vjrm.json.help").getString(),width-32),16,24,0xFFAAAAAA);
         int cursor=box.cursor();String before=draft.substring(0,Math.min(cursor,draft.length()));int line=1+(int)before.chars().filter(c->c==10).count(),column=cursor-before.lastIndexOf((char)10);

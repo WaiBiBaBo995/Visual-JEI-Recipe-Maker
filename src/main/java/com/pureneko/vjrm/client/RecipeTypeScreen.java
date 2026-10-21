@@ -1,14 +1,14 @@
 package com.pureneko.vjrm.client;
 
 import com.pureneko.vjrm.recipe.RecipeDocument;
-import net.minecraft.client.gui.GuiGraphics;
+import com.pureneko.vjrm.client.LegacyGraphics;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import java.util.*;
 
 /** Searchable, scrollable choices; modded serializers use an actual datapack recipe as their template. */
-final class RecipeTypeScreen extends Screen {
+final class RecipeTypeScreen extends VjrmScreen {
     private record Entry(String label,String search,Runnable choose) { }
     private final RecipeEditorScreen parent;
     private final List<Entry> entries=new ArrayList<>();
@@ -60,8 +60,8 @@ final class RecipeTypeScreen extends Screen {
         }
     }
     @Override public boolean mouseScrolled(double x,double y,double dx,double dy){scroll-=Integer.signum((int)Math.signum(dy))*3;filter();return true;}
-    @Override public void renderBackground(GuiGraphics g,int x,int y,float pt){g.fill(0,0,width,height,0xF01B2029);}
-    @Override public void render(GuiGraphics g,int x,int y,float pt){
+    @Override public void renderBackground(LegacyGraphics g,int x,int y,float pt){g.fill(0,0,width,height,0xF01B2029);}
+    @Override public void render(LegacyGraphics g,int x,int y,float pt){
         super.render(g,x,y,pt);g.drawCenteredString(font,title,width/2,10,0xFFFFFF);
         g.drawString(font,font.plainSubstrByWidth(status.getString(),width-24),12,height-24,0xFFFFFF);
         if(filtered.size()>rows.size())g.drawString(font,(scroll+1)+"–"+Math.min(scroll+rows.size(),filtered.size())+" / "+filtered.size(),width-100,height-12,0xAAAAAA);

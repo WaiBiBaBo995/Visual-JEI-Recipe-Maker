@@ -4,24 +4,36 @@ import com.google.gson.*;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
-import net.neoforged.neoforge.fluids.FluidStack;
+import com.pureneko.vjrm.platform.FluidStack;
 import java.util.*;
 
 /** A lossless JSON draft. Only explicitly selected fields are replaced. */
 public final class RecipeDocument {
-    public record Field(List<String> path, boolean fluid, boolean output, String chemical) {
+    public record Field(List<String> path, boolean fluid, boolean output, String chemical, boolean raw) {
+        public Field{path=List.copyOf(path);}
+        public Field(List<String> path,boolean fluid,boolean output,String chemical){this(path,fluid,output,chemical,false);}
         public Field(List<String> path,boolean fluid,boolean output){this(path,fluid,output,"");}
-        public String label() { return String.join("/", path); }
+        public String label() { return JsonFieldPaths.label(path); }
     }
     public static final List<String> TYPES = List.of("crafting_shaped", "crafting_shapeless", "smelting", "blasting", "smoking", "campfire_cooking", "stonecutting", "smithing_transform");
     private JsonObject json;
+    private final Map<List<String>,Field> manualFields=new LinkedHashMap<>();
     public RecipeDocument(JsonObject json) { this.json = json.deepCopy(); }
     public JsonObject json() { return json.deepCopy(); }
-    public void replace(JsonObject json) { this.json = json.deepCopy(); }
+    public void replace(JsonObject json) {
+        if(!Objects.equals(this.json.get("type"),json.get("type")))manualFields.clear();
+        this.json=json.deepCopy();manualFields.keySet().removeIf(path->!JsonFieldPaths.exists(this.json,path));
+    }
+    public List<Field> manualFields(){return List.copyOf(manualFields.values());}
+    public void addManualField(Field field){
+        if(field.path().isEmpty()||field.path().equals(List.of("type"))||!Set.of("","gas","infuse_type","pigment","slurry","chemical").contains(field.chemical()))throw new IllegalArgumentException("vjrm.error.field_path");
+        JsonFieldPaths.get(json,field.path());manualFields.put(field.path(),field);
+    }
+    public void removeManualField(List<String> path){manualFields.remove(path);}
     public record NumericField(List<String> path, String value) {
         public String label() { return String.join("/", path); }
     }
@@ -79,7 +91,7 @@ public final class RecipeDocument {
     }
     public static RecipeDocument template(String type) {
         JsonObject j = new JsonObject(); j.addProperty("type", "minecraft:" + type);
-        JsonObject stone = JsonParser.parseString("{\"item\":\"minecraft:stone\"}").getAsJsonObject();
+        JsonElement stone = new JsonPrimitive("minecraft:stone");
         j.add("result", JsonParser.parseString("{\"id\":\"minecraft:stone\",\"count\":1}"));
         switch (type) {
             case "crafting_shaped" -> {
@@ -88,9 +100,9 @@ public final class RecipeDocument {
             }
             case "crafting_shapeless" -> { JsonArray a = new JsonArray(); a.add(stone); j.add("ingredients", a); }
             case "smithing_transform" -> {
-                j.add("template", JsonParser.parseString("{\"item\":\"minecraft:netherite_upgrade_smithing_template\"}"));
-                j.add("base", JsonParser.parseString("{\"item\":\"minecraft:diamond_sword\"}"));
-                j.add("addition", JsonParser.parseString("{\"item\":\"minecraft:netherite_ingot\"}"));
+                j.add("template", new JsonPrimitive("minecraft:netherite_upgrade_smithing_template"));
+                j.add("base", new JsonPrimitive("minecraft:diamond_sword"));
+                j.add("addition", new JsonPrimitive("minecraft:netherite_ingot"));
                 j.add("result", JsonParser.parseString("{\"id\":\"minecraft:netherite_sword\",\"count\":1}"));
             }
             default -> {
@@ -100,7 +112,12 @@ public final class RecipeDocument {
         }
         return new RecipeDocument(j);
     }
-    public List<Field> fields() { List<Field> out = new ArrayList<>(); scan(json, new ArrayList<>(), out); return List.copyOf(out); }
+    public List<Field> fields() {
+        List<Field> out=new ArrayList<>();scan(json,new ArrayList<>(),out);
+        manualFields.keySet().removeIf(path->!JsonFieldPaths.exists(json,path));
+        out.removeIf(f->manualFields.containsKey(f.path()));out.addAll(manualFields.values());
+        return List.copyOf(out);
+    }
     private void scan(JsonElement node, List<String> path, List<Field> out) {
         String label = String.join("/", path).toLowerCase(Locale.ROOT);
         String chemical=ChemicalSupport.kind(node,path,json);
@@ -111,7 +128,7 @@ public final class RecipeDocument {
                 var inner=new ArrayList<Field>();scan(o.get("ingredient"),path,inner);
                 if(inner.size()==1&&inner.getFirst().path().equals(path)){out.add(inner.getFirst());return;}
             }
-            ResourceLocation stackId=o.has("id") && o.get("id").isJsonPrimitive()?ResourceLocation.tryParse(o.get("id").getAsString()):null;
+            Identifier stackId=o.has("id") && o.get("id").isJsonPrimitive()?Identifier.tryParse(o.get("id").getAsString()):null;
             boolean fluid = o.has("amount") && o.has("id") || o.has("fluid") || o.has("amount") && o.has("type") && o.get("type").isJsonPrimitive() && o.get("type").getAsString().startsWith("neoforge:") && !o.has("item") || label.contains("fluid") && o.has("tag") || (stackId!=null && (label.contains("fluid") || BuiltInRegistries.FLUID.containsKey(stackId) && !BuiltInRegistries.ITEM.containsKey(stackId)));
             if(o.has("type")&&o.get("type").isJsonPrimitive()&&o.get("type").getAsString().contains("fluid"))fluid=true;
             boolean item = o.has("item") && o.get("item").isJsonPrimitive() || o.has("tag") || (stackId!=null&&BuiltInRegistries.ITEM.containsKey(stackId));
@@ -122,24 +139,28 @@ public final class RecipeDocument {
         } else if (node.isJsonArray()) {
             // Alternative ingredients form one field, not independent slots.
             JsonArray a = node.getAsJsonArray();
-            if (!a.isEmpty() && a.get(0).isJsonObject() && (a.get(0).getAsJsonObject().has("item") || a.get(0).getAsJsonObject().has("tag")) && !path.getLast().equals("ingredients") && !path.getLast().equals("results") && !path.getLast().equals("outputs")) {
+            if (!a.isEmpty() && (a.get(0).isJsonPrimitive() && ingredientPath(path) || a.get(0).isJsonObject() && (a.get(0).getAsJsonObject().has("item") || a.get(0).getAsJsonObject().has("tag"))) && !path.getLast().equals("ingredients") && !path.getLast().equals("results") && !path.getLast().equals("outputs")) {
                 out.add(new Field(List.copyOf(path), false, false)); return;
             }
             for (int i=0; i<a.size(); i++) { var p = new ArrayList<>(path); p.add(Integer.toString(i)); scan(a.get(i), p, out); }
         } else if(node.isJsonPrimitive()&&node.getAsJsonPrimitive().isString()&&!path.isEmpty()){
-            String last=path.getLast();ResourceLocation id=ResourceLocation.tryParse(node.getAsString());
+            String last=path.getLast(),value=node.getAsString();
+            boolean tag=value.startsWith("#");Identifier id=Identifier.tryParse(tag?value.substring(1):value);
             if(id!=null&&!Set.of("type","tag","group","category","id","item","fluid").contains(last)&&
-                (label.contains("result")||label.contains("output")||label.contains("ingredient")||label.contains("input"))&&
-                (BuiltInRegistries.ITEM.containsKey(id)||BuiltInRegistries.FLUID.containsKey(id))){
-                boolean fluid=label.contains("fluid")||!BuiltInRegistries.ITEM.containsKey(id);
+                (ingredientPath(path)||label.contains("result")||label.contains("output")||label.contains("input"))&&
+                (tag||BuiltInRegistries.ITEM.containsKey(id)||BuiltInRegistries.FLUID.containsKey(id))){
+                boolean fluid=label.contains("fluid")||!tag&&!BuiltInRegistries.ITEM.containsKey(id);
                 out.add(new Field(List.copyOf(path),fluid,label.contains("result")||label.contains("output")));
             }
         }
     }
+    private static boolean ingredientPath(List<String> path){
+        if(path.isEmpty())return false;
+        String label=String.join("/",path).toLowerCase(Locale.ROOT);
+        return path.size()==2&&path.getFirst().equals("key")||label.contains("ingredient")||Set.of("template","base","addition").contains(path.getLast());
+    }
     public JsonElement get(Field f) {
-        JsonElement e = json;
-        for (String part : f.path()) e = e.isJsonArray() ? e.getAsJsonArray().get(Integer.parseInt(part)) : e.getAsJsonObject().get(part);
-        return e;
+        return JsonFieldPaths.get(json,f.path());
     }
     public void set(Field f, JsonElement value) {
         JsonElement e = json; var p = f.path();
@@ -148,15 +169,17 @@ public final class RecipeDocument {
         if (e.isJsonArray()) e.getAsJsonArray().set(Integer.parseInt(last), value.deepCopy()); else e.getAsJsonObject().add(last, value.deepCopy());
     }
     public int quantity(Field field){
+        if(field.raw())return 1;
         var value=get(field);
         if(value.isJsonObject()){
             var object=value.getAsJsonObject();String key=field.fluid()?"amount":"count";
             if(object.has(key))return object.get(key).getAsInt();
             if(object.has("ingredient")&&object.has("amount"))return object.get("amount").getAsInt();
         }
-        return field.fluid()&&!field.output()?1000:1;
+        return field.fluid()&&!field.output()?81000:1;
     }
     public boolean matches(Field f, Object value, HolderLookup.Provider registries) {
+        if(f.raw())return false;
         if(!f.chemical().isEmpty())return ChemicalSupport.isStack(value)&&values(f,registries).stream().anyMatch(v->ChemicalSupport.stackKind(v).equals(ChemicalSupport.stackKind(value))&&ChemicalSupport.id(v).equals(ChemicalSupport.id(value)));
         try {
             var ops = registries.createSerializationContext(JsonOps.INSTANCE);
@@ -172,10 +195,11 @@ public final class RecipeDocument {
         return false;
     }
     public void accept(Field f, Object value, int count, HolderLookup.Provider registries) {
+        if(f.raw())throw new IllegalArgumentException("vjrm.error.ingredient");
         if(!f.chemical().isEmpty()){accept(f,value,(long)count,registries);return;}
         JsonElement root=get(f).deepCopy(),existing=atom(root);
         boolean nested=root!=existing;
-        if(existing.isJsonPrimitive()){
+        if(existing.isJsonPrimitive() || existing.isJsonArray()){
             String id=value instanceof ItemStack s?BuiltInRegistries.ITEM.getKey(s.getItem()).toString():value instanceof FluidStack s?BuiltInRegistries.FLUID.getKey(s.getFluid()).toString():null;
             if(id==null)throw new IllegalArgumentException("vjrm.error.ingredient");
             if(nested)root.getAsJsonObject().addProperty("ingredient",id);else root=new JsonPrimitive(id);
@@ -186,7 +210,7 @@ public final class RecipeDocument {
                 changed.remove("tag");changed.addProperty(itemKey?"item":"id",BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
                 if(f.output()){
                     changed.remove("components");
-                    var encoded=ItemStack.CODEC.encodeStart(registries.createSerializationContext(JsonOps.INSTANCE),stack.copyWithCount(count)).getOrThrow().getAsJsonObject();
+                    var encoded=net.minecraft.world.item.ItemStackTemplate.CODEC.encodeStart(registries.createSerializationContext(JsonOps.INSTANCE),net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(stack.copyWithCount(count))).getOrThrow().getAsJsonObject();
                     if(encoded.has("components"))changed.add("components",encoded.get("components"));
                     changed.addProperty("count",count);
                 }else if(changed.has("count"))changed.addProperty("count",count);
@@ -195,8 +219,8 @@ public final class RecipeDocument {
                 if(changed.has("type") && Set.of("neoforge:tag","neoforge:single").contains(changed.get("type").getAsString()))changed.addProperty("type","neoforge:single");
                 changed.addProperty(changed.has("id")?"id":"fluid",BuiltInRegistries.FLUID.getKey(fluid.getFluid()).toString());
                 changed.remove("components");
-                var encoded=FluidStack.CODEC.encodeStart(registries.createSerializationContext(JsonOps.INSTANCE),fluid.copyWithAmount(count)).getOrThrow().getAsJsonObject();
-                if(encoded.has("components"))changed.add("components",encoded.get("components"));
+                var components=fluid.componentsJson(registries);
+                if(components.isJsonObject()&&!components.getAsJsonObject().entrySet().isEmpty())changed.add("components",components);
                 if(!nested||changed.has("amount"))changed.addProperty("amount",count);
             }else throw new IllegalArgumentException("vjrm.error.ingredient");
             if(nested)root.getAsJsonObject().add("ingredient",changed);else root=changed;
@@ -211,7 +235,7 @@ public final class RecipeDocument {
     }
     public long chemicalAmount(Field field){return ChemicalSupport.amount(get(field));}
     public void chemicalTag(Field field,String tag,long amount){
-        if(field.output()||field.chemical().isEmpty()||ResourceLocation.tryParse(tag)==null||amount<1)throw new IllegalArgumentException("vjrm.error.tag");
+        if(field.output()||field.chemical().isEmpty()||Identifier.tryParse(tag)==null||amount<1)throw new IllegalArgumentException("vjrm.error.tag");
         set(field,ChemicalSupport.replace(get(field),field.chemical(),false,tag,true,amount));
     }
     public void acceptRepeated(List<Field> group,Object value,int repetitions,HolderLookup.Provider registries) {
@@ -238,29 +262,32 @@ public final class RecipeDocument {
     }
     private static JsonElement atom(JsonElement value){return value.isJsonObject()&&value.getAsJsonObject().has("ingredient")?value.getAsJsonObject().get("ingredient"):value;}
     public List<?> values(Field f,HolderLookup.Provider registries){
+        if(f.raw())return List.of();
         if(!f.chemical().isEmpty())return ChemicalSupport.values(get(f),f.chemical(),f.output(),registries.createSerializationContext(JsonOps.INSTANCE));
         var ops=registries.createSerializationContext(JsonOps.INSTANCE);JsonElement raw=get(f),leaf=atom(raw);
         int quantity=quantity(f);
         if(f.fluid()){
-            var ingredient=net.neoforged.neoforge.fluids.crafting.FluidIngredient.CODEC.parse(ops,leaf).result();
-            if(ingredient.isPresent()){int amount=quantity;return Arrays.stream(ingredient.get().getStacks()).map(s->s.copyWithAmount(amount)).toList();}
-            String id=leaf.isJsonPrimitive()?leaf.getAsString():leaf.isJsonObject()&&leaf.getAsJsonObject().has("id")?leaf.getAsJsonObject().get("id").getAsString():null;
-            if(id!=null&&BuiltInRegistries.FLUID.containsKey(ResourceLocation.parse(id)))return List.of(new FluidStack(BuiltInRegistries.FLUID.get(ResourceLocation.parse(id)),quantity));
+            return FluidStack.values(leaf,quantity,registries);
         }else{
             if(!f.output()){
                 var ingredient=Ingredient.CODEC.parse(ops,leaf).result();
-                if(ingredient.isPresent()){int count=quantity;return Arrays.stream(ingredient.get().getItems()).map(s->s.copyWithCount(count)).toList();}
+                if(ingredient.isPresent()){int count=quantity;return ingredient.get().items().map(h->new ItemStack(h,count)).toList();}
             }
-            var stack=ItemStack.CODEC.parse(ops,leaf).result();if(stack.isPresent())return List.of(stack.get());
+            var stack=net.minecraft.world.item.ItemStackTemplate.CODEC.parse(ops,leaf).result();if(stack.isPresent())return List.of(stack.get().create());
             String id=leaf.isJsonPrimitive()?leaf.getAsString():leaf.isJsonObject()&&leaf.getAsJsonObject().has("item")?leaf.getAsJsonObject().get("item").getAsString():null;
-            if(id!=null&&BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(id)))return List.of(new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse(id)),quantity));
+            if(id!=null&&BuiltInRegistries.ITEM.containsKey(Identifier.parse(id)))return List.of(new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(id)),quantity));
         }
         return List.of();
     }
     public void tag(Field f, String tag) {
+        if(f.raw())throw new IllegalArgumentException("vjrm.error.tag");
         if(!f.chemical().isEmpty()){chemicalTag(f,tag,chemicalAmount(f));return;}
-        if (f.output() || ResourceLocation.tryParse(tag) == null) throw new IllegalArgumentException("vjrm.error.tag");
+        if (f.output() || Identifier.tryParse(tag) == null) throw new IllegalArgumentException("vjrm.error.tag");
         JsonElement root=get(f).deepCopy(),leaf=atom(root);
+        if(leaf.isJsonPrimitive()||leaf.isJsonArray()){
+            if(root!=leaf)root.getAsJsonObject().addProperty("ingredient","#"+tag);else root=new JsonPrimitive("#"+tag);
+            set(f,root);return;
+        }
         JsonObject o=leaf.isJsonObject()?leaf.getAsJsonObject():new JsonObject();o.remove("item");o.remove("id");o.remove("fluid");o.addProperty("tag",tag);
         if(f.fluid() && o.has("type") && Set.of("neoforge:single","neoforge:tag").contains(o.get("type").getAsString())){o.addProperty("type","neoforge:tag");o.remove("components");}
         if(root!=leaf)root.getAsJsonObject().add("ingredient",o);else root=o;
@@ -269,6 +296,7 @@ public final class RecipeDocument {
     public void tag(Field field,String tag,int count){
         if(count<1)throw new IllegalArgumentException("vjrm.error.amount");
         tag(field,tag);
+        if(!get(field).isJsonObject())return;
         var value=get(field).getAsJsonObject();
         String key=field.fluid()?"amount":"count";
         if(field.fluid()||value.has(key))value.addProperty(key,count);
@@ -287,7 +315,7 @@ public final class RecipeDocument {
         addCraftingInput(gridIndex,stack,false);
     }
     public void addCraftingInput(int gridIndex,ItemStack stack,boolean emiGrid) {
-        JsonObject ingredient=new JsonObject();ingredient.addProperty("item",BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+        JsonElement ingredient=new JsonPrimitive(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
         if(type().equals("minecraft:crafting_shapeless")) {
             var inputs=json.getAsJsonArray("ingredients");if(inputs.size()>=9)throw new IllegalArgumentException("vjrm.error.required");inputs.add(ingredient);return;
         }

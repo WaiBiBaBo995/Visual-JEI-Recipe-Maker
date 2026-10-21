@@ -2,10 +2,10 @@ package com.pureneko.vjrm.client;
 
 import com.pureneko.vjrm.recipe.RecipeDocument;
 import com.pureneko.vjrm.recipe.RecipeSource;
-import net.minecraft.client.gui.GuiGraphics;
+import com.pureneko.vjrm.client.LegacyGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.Recipe;
 import java.util.*;
 import java.util.stream.Stream;
@@ -13,11 +13,11 @@ import java.util.stream.Stream;
 /** Viewer-neutral boundary. Optional viewer API classes stay in their own integrations. */
 public final class RecipePreview {
     public enum Role { INPUT, OUTPUT, CATALYST, RENDER_ONLY }
-    public record Type(ResourceLocation getUid) { }
+    public record Type(Identifier getUid) { }
     public record Category(Object nativeCategory, Type getRecipeType, Component getTitle) { }
     public record Value(Object getIngredient) { }
     public record Slots(List<Slot> getSlotViews) { }
-    public record Template(String serializer, ResourceLocation id, Category category, Object display) {
+    public record Template(String serializer, Identifier id, Category category, Object display) {
         public String label() { return serializer+" · "+category.getTitle().getString()+(proxy(category,serializer)?" · "+Component.translatable("vjrm.proxy").getString():""); }
     }
     public interface Slot {
@@ -35,7 +35,7 @@ public final class RecipePreview {
         Rect2i getRect();
         Category getRecipeCategory();
         Slots getRecipeSlotsView();
-        void drawRecipe(GuiGraphics graphics, int mouseX, int mouseY);
+        void drawRecipe(LegacyGraphics graphics, int mouseX, int mouseY);
         default void setPosition(int x, int y) { }
         default void tick() { }
         default Object nativeLayout() { return this; }
@@ -43,8 +43,8 @@ public final class RecipePreview {
     }
     public interface Hooks {
         default void initialized(RecipeEditorScreen screen) { }
-        default void background(GuiGraphics g,int x,int y,float delta) { }
-        default void overlay(GuiGraphics g,int x,int y,float delta) { }
+        default void background(LegacyGraphics g,int x,int y,float delta) { }
+        default void overlay(LegacyGraphics g,int x,int y,float delta) { }
         default boolean mouseClicked(double x,double y,int button) { return false; }
         default boolean mouseReleased(double x,double y,int button) { return false; }
         default boolean mouseDragged(double x,double y,int button,double dx,double dy) { return false; }

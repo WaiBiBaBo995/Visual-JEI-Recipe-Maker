@@ -1,16 +1,11 @@
 package com.pureneko.vjrm.client;
-
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
-
-@EventBusSubscriber(modid = "vjrm", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 public final class VjrmKeybinds {
-    public static final KeyMapping OPEN = new KeyMapping("key.vjrm.open", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "key.categories.vjrm");
-    public static final KeyMapping COPY_BUTTON = new KeyMapping("key.vjrm.copy_button", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, "key.categories.vjrm");
-    @SubscribeEvent public static void register(RegisterKeyMappingsEvent event) { event.register(OPEN); event.register(COPY_BUTTON); }
+    private static final KeyMapping.Category CATEGORY=KeyMapping.Category.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("vjrm","main"));
+    public static final KeyMapping OPEN=new KeyMapping("key.vjrm.open",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_F8,CATEGORY);
+    public static final KeyMapping COPY_BUTTON=new KeyMapping("key.vjrm.copy_button",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,CATEGORY);
+    public static void register(){KeyMappingHelper.registerKeyMapping(OPEN);KeyMappingHelper.registerKeyMapping(COPY_BUTTON);}
 }
