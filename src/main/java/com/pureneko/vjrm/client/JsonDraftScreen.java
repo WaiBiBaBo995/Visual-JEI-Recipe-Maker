@@ -22,8 +22,8 @@ final class JsonDraftScreen extends Screen {
     private boolean valid;
     JsonDraftScreen(Screen parent,JsonObject json,Consumer<JsonObject> save){super(Component.translatable("vjrm.json"));this.parent=parent;this.save=save;draft=PRETTY.toJson(json);}
     @Override protected void init(){
-        box=addRenderableWidget(new JsonEditBox(font,16,40,width-32,Math.max(30,height-110),title));box.setValue(draft);
-        box.setValueListener(value->{draft=value;validateAt=Util.getMillis()+300;valid=false;if(apply!=null)apply.active=false;});
+        box=addRenderableWidget(new JsonEditBox(font,16,40,width-32,Math.max(30,height-110),title));box.setValue(draft);box.moveToStart();
+        box.setValueListener(value->{draft=value;box.setIngredientIcons(java.util.List.of());validateAt=Util.getMillis()+300;valid=false;if(apply!=null)apply.active=false;});
         int bw=Math.max(36,Math.min(120,(width-44)/4)),gap=4;
         apply=addRenderableWidget(Button.builder(Component.translatable("vjrm.apply"),b->apply()).bounds(16,height-34,bw,20).build());
         addRenderableWidget(Button.builder(Component.translatable("vjrm.json.format"),b->format()).bounds(16+bw+gap,height-34,bw,20).build());
@@ -33,7 +33,7 @@ final class JsonDraftScreen extends Screen {
     }
     private void validate(){
         validateAt=0;
-        try{JsonSyntax.parse(draft);valid=true;status=Component.translatable("vjrm.json.valid");}
+        try{var parsed=JsonSyntax.parse(draft);box.setIngredientIcons(IngredientAnnotations.read(draft,parsed,0,parent instanceof RecipeEditorScreen editor?editor.annotationFields():java.util.List.of()));valid=true;status=Component.translatable("vjrm.json.valid");}
         catch(RuntimeException ex){valid=false;status=Component.translatable("vjrm.error.invalid",ex.getMessage());}
         apply.active=valid;
     }

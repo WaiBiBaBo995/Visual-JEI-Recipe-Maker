@@ -16,6 +16,7 @@ public final class RecipeSource {
     }
     public static RecipeDocument read(MinecraftServer server, ResourceLocation id) throws IOException {
         Recipe<?> holder = server.getRecipeManager().byKey(id).orElseThrow(() -> new IOException("vjrm.error.no_source"));
+        if(GtRecipeSupport.isRecipe(holder))return GtRecipeSupport.copy(holder,server.registryAccess());
         var resource = server.getResourceManager().getResource(resourceId(id)).orElseThrow(() -> new IOException("vjrm.error.no_source"));
         try (var reader = resource.openAsReader()) {
             StringBuilder json = new StringBuilder(); char[] buffer = new char[4096]; int size;
@@ -36,8 +37,9 @@ public final class RecipeSource {
         var recipes = server.getRecipeManager().getRecipes().stream().sorted(Comparator.comparing(h -> h.getId().toString())).toList();
         for (var holder : recipes) {
             String serializer = BuiltInRegistries.RECIPE_SERIALIZER.getKey(holder.getSerializer()).toString();
+            if(GtRecipeSupport.isRecipe(holder))serializer=BuiltInRegistries.RECIPE_TYPE.getKey(holder.getType()).toString();
             if (counts.getOrDefault(serializer, 0) >= 64 || holder.getId().toString().length() > 200) continue;
-            if (server.getResourceManager().getResource(resourceId(holder.getId())).isEmpty()) continue;
+            if (!GtRecipeSupport.isRecipe(holder) && server.getResourceManager().getResource(resourceId(holder.getId())).isEmpty()) continue;
             length += serializer.length() + holder.getId().toString().length();
             if (length > 150000 || samples.size() >= 4096) break;
             samples.add(new Sample(serializer, holder.getId().toString())); counts.merge(serializer, 1, Integer::sum);

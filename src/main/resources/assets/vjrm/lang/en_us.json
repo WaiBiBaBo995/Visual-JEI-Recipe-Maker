@@ -104,5 +104,21 @@
   "vjrm.manual.removed": "Removed manual field definition.",
   "vjrm.manual.raw_help": "Raw JSON: enter valid JSON in the editor value box; no ingredient drag.",
   "vjrm.manual.drag_help": "Private wrapper: select the inner ingredient or ID node for replacement.",
-  "vjrm.error.field_path": "Choose an existing node; edit the recipe type in the JSON editor."
+  "vjrm.error.field_path": "Choose an existing node; edit the recipe type in the JSON editor.",
+  "vjrm.js": "Edit JS",
+  "vjrm.js.valid": "Valid KubeJS recipe declaration",
+  "vjrm.js.help": "Ctrl+S apply · Ctrl+Shift+F format · Ctrl+Z/Y undo/redo · Edit recipe data in merge",
+  "vjrm.js.structure": "Keep the ServerEvents.recipes declaration and machine recipe .merge({...}); edit the recipe data inside it.",
+  "vjrm.js.type": "Machine recipe type or script recipe ID does not match",
+  "vjrm.gt.kube_required": "KubeJS is required to export GTCEu scripts",
+  "vjrm.gt.add_input": "Add input",
+  "vjrm.gt.add_output": "Add output",
+  "vjrm.gt.per_tick": "Per tick",
+  "vjrm.gt.once": "Per recipe",
+  "vjrm.gt.fields": "JS fields",
+  "vjrm.gt.manual_title": "Add fields from JS recipe data",
+  "vjrm.gt.capacity": "This machine recipe type has no more slots for that ingredient",
+  "vjrm.gt.export.server": "Export server script",
+  "vjrm.gt.export.client": "Export client script",
+  "vjrm.js.copied": "Copied current JS to clipboard"
 }

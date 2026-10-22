@@ -1,11 +1,160 @@
-# 更新记录
+# Changelog -English-
 
-## 1.0.1 — 多版本更新 / Multi-version update
+## 1.0.2 — 2026-10-22
 
-- 同步新版配方编辑器、手动 JSON 字段绑定和金色字段提示至六个独立版本分支。 / Ship the updated recipe editor, manual JSON field bindings, and gold field tooltips across six independent version branches.
-- 所有语言的玩家物品栏标题仅保留名称，移除括号说明。 / Remove the parenthetical explanation from the player inventory label in every language.
-- 所有模组元数据使用精确版本 `1.0.1`；Forge/NeoForge 在资源处理时展开版本。 / Resolve exact version `1.0.1` into all loader metadata during resource processing.
-- README 恢复中英双语并适配独立分支；移除验证记录文件及其链接。 / Restore bilingual READMEs, update independent-branch links, and remove validation documents and their links.
+- Update all six editions to 1.0.2. JSON and supported GTCEu JS editors show native browser icons after recognized item/fluid ID strings, including manually defined fields. Recipe IDs, type IDs, and unrelated text do not receive icons merely because they resemble registry IDs.
+- Icons affect display only: original text, copying, formatting, and exports contain no extra characters. Wrapping, mouse positioning, selection, and cursor movement account for icon space. Invalid JSON/JS clears stale icons.
+- Recipe type search shows JEI category icons; older editions use EMI icons when EMI is selected. Names, IDs, search, and hover information remain available.
+- Fluid icons use a full-size sample to avoid thin slivers caused by Fabric units. Minecraft 26.1.2 separates ingredient and text rendering layers while preserving highlighting and clipping.
+- Minecraft 26.1.2 continues to support JEI only. GTCEu/KubeJS and Thaumaturge support remains limited to the platforms listed in [COMPATIBILITY.md](COMPATIBILITY.md).
+- Remove parenthetical explanations from inventory labels in all languages. Resolve the exact version `1.0.2` into every loader descriptor, maintain bilingual READMEs and this changelog, and remove validation documents and their links.
+
+## 1.0.1 — Multi-version release
+
+- Ship the updated recipe editor, manual JSON field bindings, and gold field tooltips across six independent version branches.
+- Remove the parenthetical explanation from the player inventory label in every language.
+- Resolve exact version `1.0.1` into loader metadata during resource processing.
+- Restore bilingual READMEs, update independent-branch links, and remove validation documents and their links.
+
+## 0.8.0 — 2026-10-22
+
+- Forge 1.20.1 and NeoForge 1.21.1: read GTCEu machine recipe sources, copy through JEI/EMI, and rebuild native pages. Support both the older `recipe.kind.GTRecipe` and newer APIs. Runtime recipes do not require matching datapack files.
+- Edit GT recipes as JS while retaining numeric editing and field binding. Add input/output and per-tick channels, and generate `merge` scripts through GTCEu's KubeJS recipe entrypoints. Provide JS highlighting, indentation, bracket/quote pairing, undo/redo, formatting, shortcuts, and clipboard copying.
+- Write GT scripts under the client/server installation root at `kubejs/server_scripts/vjrm/<namespace>/<recipe-path>.js`. Server exports retain permission, rate, overwrite, and recipe checks. Visual round-tripping parses the generated recipe declaration without executing JS.
+- Forge adapts the JEI fluid tooltip interface still used by GTCEu to avoid load failures with current JEI interfaces.
+- NeoForge 26.1.2: support Thaumaturge `AspectInstance` slots, IDs, amounts, dragging, tooltips, and manual bindings. Use public codecs and current registries, including additional aspects.
+- Treat `components` arrays as separate inputs, bind duplicate ingredients by position, and support ingredients with data component conditions. Prefer matching recipe types when rebuilding native JEI pages so generic categories do not take precedence.
+- This historical update affected the three editions above; the three Fabric editions remained at 0.7.0. Keep shared history in this file.
+
+## 0.7.0 — Gold field tooltips and Fabric ports
+
+- Show appended binding paths in vanilla `GOLD` across all six editions.
+- Add independent Fabric 1.20.1, Fabric 1.21.1, and Fabric 26.1.2 projects, update NeoForge 26.1.2, and synchronize gold tooltips to Forge 1.20.1 and NeoForge 1.21.1.
+- Integrate version-specific Fabric entrypoints, keybindings, screen events, networking, configuration, and fluid representations. Bridge native JEI/EMI fluid units while retaining components/NBT and original JSON quantities.
+- Preserve centered UI, native recipe previews, rejection reasons and sounds, source IDs/names, JSON highlighting/copying, numeric editing, and manual JSON field binding.
+- Fabric 1.20.1/1.21.1 support JEI alone, EMI alone, or both. EMI copy buttons are attached to actual recipe-page widgets, with JEMI handling JEI categories. Both 26.1.2 editions support JEI only.
+- Fabric 26.1.2 uses JEI 29.47.0.111 source IDs and Fabric recipe synchronization events to index original Recipe objects. Server-side VJRM enables vanilla serializer synchronization without requiring JEI.
+- Follow native recipe formats and datapack formats 15, 48, and 101.1. Older Fabric vanilla cooking outputs remain fixed at count one and reject unsupported edits.
+- Fabric uses `config/vjrm-client.json` and `config/vjrm-server.json`; Forge/NeoForge retain their TOML configuration.
+
+See the [Fabric installation guide](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/blob/fabric-1.21.1/README.md).
+
+## 0.6.0 — Minecraft 26.1.2 NeoForge
+
+Add an independent NeoForge 26.1.2 edition. At this historical release, NeoForge 1.21.1 and Forge 1.20.1 remained at 0.5.4.
+
+- Port to Minecraft 26.1.2, NeoForge 26.1.2.122, Java 25, and JEI 29.47.0.111; update Gradle and ModDev toolchains.
+- Adapt GUI rendering-state extraction and keyboard/mouse events while preserving centering/scaling, native recipe UI, dragging/tooltips, and rejection reasons/sounds.
+- Adapt recipe keys, registries, stack templates, and ingredients. Vanilla inputs use strings, `#tags`, and alternative arrays; update detection, replacement, tags, empty crafting slots, and templates accordingly.
+- Resolve recipe sources and copying through JEI `getSourceRecipeIds` before display IDs. NeoForge synchronization events also map original Recipe objects to real IDs when integrations lack category ID callbacks.
+- Preserve numeric editing, JSON highlighting/assistance, clipboard copying, manual fields, and slot binding. Validate edits through the actual recipe serializer, roll back failures, and retain other JSON fields.
+- Export under `recipe/` with datapack format 101.1. Update server permissions and networking. Dedicated servers do not require JEI.
+- This port uses JEI; older editions retain EMI/JEMI integrations.
+
+See the [26.1.2 README](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/blob/neoforge-26.1.2/README.md). Older third-party runtime results do not establish compatibility with 26.1.2.
+
+## 0.5.4
+
+- Fix missing copy buttons for Astral Sorcery and similar JEI integrations that register raw Recipe objects without `getRegistryName`. NeoForge 1.21.1 resolves actual IDs by loaded object identity with reload-aware caching, rather than fuzzy output matching.
+- EMI/JEMI shares source resolution for raw JEI display objects and continues reading actual server-side JSON.
+- Add **JSON Fields** above the recipe diagram to search current JSON or enter JSON Pointer paths, including array indices and escaped `/` or `~` keys.
+- Choose item, fluid, optional Mekanism chemical, or raw JSON types and input/output roles. Definitions join the selectable field list; selecting a slot first binds it immediately. Explicit bindings take precedence over default paths.
+- Raw JSON fields edit scalars, objects, or arrays, including private structures such as Lumen nodes. Actual serializer validation rolls back failures and preserves other fields.
+- Definitions survive resizing, refreshes, and same-type JSON edits; switching template/type resets them. Removing a definition does not delete data, and definitions are not exported.
+- Valid server-side JSON can open for manual editing even if automatic detection finds no editable fields.
+
+Historical Astral Sorcery 2.0.2.39 checks resolved 165 recipes across eight categories, preserved altar JSON through JEI copying, and exercised actual EMI/JEMI copy buttons plus Lumen field binding/editing. These runtime checks used NeoForge 1.21.1; Forge 1.20.1 received generic source/manual-field handling without taking cross-version Astral Sorcery as a dependency.
+
+## 0.5.3
+
+Update NeoForge 1.21.1 and Forge 1.20.1.
+
+- Show recipe sources as “ID · name” consistently with type search. Proxy recipes show true source types and display categories; hover reveals long text.
+- Fix missing EMI copy buttons in production by inserting book buttons after real recipe-page widgets are created, without relying on development-only decorators.
+- Show EMI buttons by default through independent `showEmiCopyButton = true`. An existing `showJeiCopyButton = false` no longer keeps EMI hidden after upgrading. JEI retains its previous default/configuration. The controls keybind toggles and saves both states.
+- Slot tooltips show names, registry IDs, mod names, original descriptions, and bound paths for items, fluids, and optional chemicals, including unbound display slots. Tooltips use normal text size even when the diagram scales down.
+- Consolidate historical records into this shared changelog.
+
+## 0.5.2
+
+Update NeoForge 1.21.1 and Forge 1.20.1.
+
+- Add **Copy to Clipboard** to copy the full current JSON draft without requiring validation, applying changes, or closing the page.
+- Move field/binding controls above the recipe UI and center diagrams horizontally and vertically in their own display area.
+- Support Mekanism chemical fields, tags, and alternatives such as `chemicalInput`, `gasInput`, `slurryInput`, and `input_chemical`. Preserve chemical types, extension fields, and long quantities; support binding, dragging, IDs, and tags.
+- Fix item ingredient counts inside Mekanism `ingredient` / `amount` wrappers.
+- Isolate optional chemical APIs so Mekanism is not required when absent.
+- Lower NeoForge minimum from 21.1.251 to **21.1.65**, and Forge minimum from 47.4.10 to **47.1.1**. Historical minimum-loader builds/checks used JEI 19.27.0.350 / 15.74.0.225 and EMI 1.1.24.
+
+Historical Mekanism 1.20.1-10.4.16.80 checks matched 730 fields: 248 gas, 44 infusion, 396 pigment, and 42 slurry. Each type completed four edits followed by decoding; client checks covered binding, replacement, ID input, quantity 9876543210, and complete machine layouts.
+
+Other mods retain their own loader requirements. Older NeoForge can use JEI 19.27.0.350; JEI 19.64.0.455 itself requires NeoForge 21.1.238+.
+
+## 0.5.1 — Complete EMI / JEMI recipe UI
+
+Fix the 0.5.0 behavior that always used generic slot previews under EMI and lost the original recipe UI.
+
+- Prefer the complete `EmiRecipe.addWidgets` tree, preserving backgrounds, textures, animation, arrows, flames, text, fluids, and extension widgets.
+- Rebuild vanilla EMI layouts from current JSON, updating cooking time and experience widgets.
+- Preserve JEMI's original rendering and rebuild supported categories through its JEI runtime without requiring EMI to load VJRM's JEI plugin.
+- For third-party wrappers that cannot be rebuilt, retain original UI and override newly created preview slots without changing EMI's registered recipe. Dynamic text follows the source layout with a notice.
+- Use generic JSON slots only when neither native EMI nor JEMI layout is available.
+- Correct EMI/JEI differences for 3×2 shaped and some shapeless grids, including bindings and empty-slot insertion.
+
+Historical verification covered release packaging, 42 recipe/file checks, JEI regression, EMI alone without JEI API classes, all eight vanilla templates, updated cooking widgets, native EMI item/fluid replacement and source isolation, actual JEMI category drawing, and 16 Create 6.0.10 recipe layouts including mechanical crafting/sequenced assembly. Screenshots covered vanilla EMI, native EMI machines, JEMI machines, and Create sequences.
+
+Compatibility boundary: EMI 1.1.24 JEMI needs JEI API/runtime. EMI alone supports vanilla and native EMI pages; JEI-only mod pages require JEI alongside EMI. See the [JEMI implementation](https://github.com/emilyploszaj/emi/blob/1.21/xplat/src/main/java/dev/emi/emi/jemi/JemiPlugin.java).
+
+Historical environment: Minecraft 1.21.1, NeoForge 21.1.251, Java 21, EMI 1.1.24+1.21.1, JEI 19.64.0.455.
+
+## Visual JEI Recipe Maker 0.5.0
+
+Target: Minecraft 1.21.1 / NeoForge 21.1.251 / Java 21.
+
+1. Center the editor across the full screen and rescale on resolution changes.
+2. Show specific right-click rejection reasons at the cursor, play the vanilla villager rejection sound, and roll back invalid operations.
+3. Support JEI 19.27+ or EMI 1.1.24+; prefer EMI when both are installed. Include sidebar search, item/fluid dragging, template catalogs, and copy buttons.
+4. Add **Values** for existing time, mana, energy, probability, loops, and nested fields. Support big integers, decimals, scientific notation, and common numeric strings while retaining JSON types/other fields. Validate changes as a group.
+5. Add JSON syntax colors, line/column indicators, bracket matching/completion, auto-indentation, undo/redo, formatting, and live checks. Ctrl+S applies, Ctrl+Shift+F formats, Ctrl+Z/Y undo/redo.
+
+Historical verification: release packaging excluded test/browser classes; 42 basic recipe/IO and 119 real Create 6.0.10 checks passed, totaling 161. Client checks covered JEI alone, EMI alone, coexistence, two UI scales, rejection/rollback, numeric editing, JSON assistance, actual EMI dragging, native Create layouts, sequences, large grids, and proxies. JSON/numeric/sidebar screenshots were inspected.
+
+Original 0.5.0 limits: EMI used a generic JSON-based preview; JEI used native categories. Serializer behavior determines whether numeric edits affect machines. Add missing defaults or complex structures through JSON. Multiplayer original reading/server export requires server-side VJRM and existing permissions.
+
+Historical installation: replace old VJRM with the matching 0.5.0 JAR and install JEI or EMI. Source packages included code, Gradle Wrapper, fixtures, and README, excluding worlds, build caches, and third-party JARs.
+
+Historical test results describe the corresponding releases; they are not new runtime verification of 1.0.2.
+
+# 更新记录 -中文-
+
+## 1.0.2 — 2026-10-22
+
+- 六个工程统一更新为 1.0.2。JSON 与旧版 GTCEu JS 编辑页在已识别的物品、流体 ID 字符串后显示浏览器原生图标，包含手动添加的字段；普通类型、配方 ID 和其他文字不会仅因格式像注册 ID 而添加图标。
+- 图标只属于显示层，原文、复制、格式化和导出不插入额外字符。自动换行、鼠标定位、选择和光标移动按图标占位计算；编辑无效 JSON/JS 时清除过期图标。
+- 配方类型检索列表加入对应 JEI 类别图标；旧版选择 EMI 时使用 EMI 图标，保留名称、ID、搜索和悬停信息。
+- 流体图标使用满幅示例显示，避免 Fabric 单位使图标缩成细线；26.1.2 单独排列原料与文字的渲染层，保留高亮和裁切。
+- 26.1.2 继续只支持 JEI。GTCEu/KubeJS 和 Thaumaturge 兼容范围保持原有版本范围。
+
+- 所有语言的物品栏标题移除括号说明；所有加载器元数据写入精确版本 `1.0.2`；README 与更新记录保持中英双语，删除验证记录文件及相关链接。
+
+## 1.0.1 — 多版本更新
+
+- 同步新版配方编辑器、手动 JSON 字段绑定和金色字段提示至六个独立版本分支。
+- 所有语言的玩家物品栏标题仅保留名称，移除括号说明。
+- 所有模组元数据使用精确版本 `1.0.1`；Forge/NeoForge 在资源处理时展开版本。
+- README 恢复中英双语并适配独立分支；移除验证记录文件及其链接。
+
+
+## 0.8.0 — 2026-10-22
+
+- 1.20.1 Forge、1.21.1 NeoForge：支持 GTCEu 机器配方的来源读取、JEI/EMI 复制和原生页面重建，兼容旧版 `recipe.kind.GTRecipe` 与新版 API。运行时配方无需对应数据包文件。
+- GT 配方改为 JS 编辑，保留数值编辑、字段绑定，新增输入/输出及每 tick 通道操作；通过 GTCEu 的 KubeJS 配方入口生成 `merge` 脚本。提供 JS 高亮、缩进、括号/引号配对、撤销重做、格式化、快捷键及复制到剪贴板。
+- GT 脚本写入客户端/服务端安装根目录的 `kubejs/server_scripts/vjrm/<命名空间>/<配方路径>.js`；服务端保持权限、频率、覆盖和配方校验。编辑器回填只解析生成的配方声明，不执行 JS。
+- Forge 增加 GTCEu 仍使用的 JEI 流体 tooltip 接口适配，避免与当前 JEI 的接口差异导致加载失败。
+- 26.1.2 NeoForge：支持 Thaumaturge `AspectInstance` 源质槽、ID、数量、拖拽、提示及手动绑定；通过公开 codec 解析当前注册表，包括附加源质。
+- `components` 数组按多个独立输入识别，重复材料按位置分别绑定，支持带数据组件条件的材料；原生 JEI 页面重建优先匹配配方类型，避免被泛用类别抢占。
+- 此次只更新上述三个工程；三个 Fabric 工程保持 0.7.0。所有更新记录仍集中在本文件。
+
 
 ## 0.7.0 — 金色字段提示与 Fabric 移植
 
@@ -119,3 +268,5 @@ Mekanism 1.20.1-10.4.16.80 验证：识别并匹配 730 个化学品字段，气
 使用边界：EMI 编辑器采用基于当前 JSON 的通用配方预览；JEI 沿用原生类别预览。数值字段是否影响机器行为由对应模组 serializer 决定；不存在的缺省字段或复杂结构可在 JSON 中添加。多人服务器读取原配方和服务端导出仍需服务端安装 VJRM，导出权限沿用原设置。
 
 安装：将本目录的 0.5.0 JAR 放入 mods，替换旧版 VJRM；另装 JEI 或 EMI 任意一个。源码包提供完整源代码、Gradle Wrapper、测试与 README，不含游戏存档、构建缓存及第三方 JAR。
+
+历史检查结果描述对应版本，不代表本次对 1.0.2 重新进行了游戏运行验证。

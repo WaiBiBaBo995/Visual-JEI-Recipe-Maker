@@ -23,7 +23,7 @@ public final class PortClientChecks {
     private static RecipeEditorScreen editor;
     private static String exportPath;
     @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event){
-        if(!Boolean.getBoolean("vjrm.verifyClient")||done||event.phase!=TickEvent.Phase.END)return;
+        if(Boolean.getBoolean("vjrm.verifyIcons")||Boolean.getBoolean("vjrm.verifyGt")||!Boolean.getBoolean("vjrm.verifyClient")||done||event.phase!=TickEvent.Phase.END)return;
         var mc=Minecraft.getInstance();
         try{
             if(System.currentTimeMillis()-START>180000)throw new AssertionError("Client verification timed out at "+stage);
@@ -49,7 +49,7 @@ public final class PortClientChecks {
         }catch(Throwable ex){fail(ex);}
     }
     @SubscribeEvent public static void render(TickEvent.RenderTickEvent event){
-        if(!Boolean.getBoolean("vjrm.verifyClient")||done||event.phase!=TickEvent.Phase.END||stage<5||++frames<20)return;
+        if(Boolean.getBoolean("vjrm.verifyIcons")||Boolean.getBoolean("vjrm.verifyGt")||!Boolean.getBoolean("vjrm.verifyClient")||done||event.phase!=TickEvent.Phase.END||stage<5||++frames<20)return;
         try{
             Files.createDirectories(OUT);
             if(stage==9){if((boolean)Class.forName("com.pureneko.vjrm.client.EmiCopyChecks").getMethod("rendered",Path.class).invoke(null,OUT))finish();return;}

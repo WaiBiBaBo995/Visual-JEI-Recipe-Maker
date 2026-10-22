@@ -54,6 +54,8 @@ public final class RecipePreview {
     }
     public interface Provider extends Hooks {
         Category category(Object category);
+        default boolean drawIngredientIcon(GuiGraphics g,Object ingredient,int x,int y) { return false; }
+        default boolean drawCategoryIcon(GuiGraphics g,Category category,int x,int y) { return false; }
         Optional<Layout> layout(Recipe<?> recipe, Category preferred, RecipeDocument document);
         Optional<Layout> sourceLayout(Category category, Object display);
         default Optional<Layout> fallbackLayout(Recipe<?> recipe,Category category,RecipeDocument document) { return Optional.empty(); }
@@ -70,6 +72,14 @@ public final class RecipePreview {
     public static Optional<Layout> sourceLayout(Category category,Object display) { return provider==null?Optional.empty():provider.sourceLayout(category,display); }
     public static Optional<Layout> fallbackLayout(Recipe<?> recipe,Category category,RecipeDocument document) { return provider==null?Optional.empty():provider.fallbackLayout(recipe,category,document); }
     public static List<Template> templates(List<RecipeSource.Sample> samples) { return provider==null?List.of():provider.templates(samples); }
+    public static boolean drawIngredientIcon(GuiGraphics g,Object ingredient,int x,int y){
+        if(provider==null)return false;
+        try{return provider.drawIngredientIcon(g,ingredient,x,y);}catch(RuntimeException|LinkageError ex){return false;}
+    }
+    public static boolean drawCategoryIcon(GuiGraphics g,Category category,int x,int y){
+        if(provider==null||category==null)return false;
+        try{return provider.drawCategoryIcon(g,category,x,y);}catch(RuntimeException|LinkageError ex){return false;}
+    }
     public static Component typeLabel(String id,Category category){
         Component name=category==null?Component.empty():category.getTitle();
         if(name.getString().isBlank()||name.getString().equals(id)){

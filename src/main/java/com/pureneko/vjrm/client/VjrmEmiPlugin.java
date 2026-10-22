@@ -108,12 +108,26 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
             var source=EmiJemiPreview.sourceId(recipe);if(source!=null)return source;
         }
         var backing=recipe.getBackingRecipe();if(backing!=null)return backing.getId();
-        var id=recipe.getId();return id!=null&&!id.getPath().startsWith("/")&&mc.level.getRecipeManager().byKey(id).isPresent()?id:null;
+        var id=recipe.getId();if(id!=null&&recipe.getClass().getSimpleName().equals("GTEmiRecipe")&&recipe.getClass().getName().startsWith("com.gregtechceu.gtceu."))return id;return id!=null&&!id.getPath().startsWith("/")&&mc.level.getRecipeManager().byKey(id).isPresent()?id:null;
+    }
+    @Override public boolean drawIngredientIcon(GuiGraphics g,Object ingredient,int x,int y){
+        dev.emi.emi.api.stack.EmiStack stack;
+        if(ingredient instanceof net.minecraft.world.item.ItemStack item)stack=dev.emi.emi.api.stack.EmiStack.of(item);
+        else if(ingredient instanceof net.minecraftforge.fluids.FluidStack fluid)stack=dev.emi.emi.api.forge.ForgeEmiStack.of(fluid);else return false;
+        stack.render(g,x,y,0,dev.emi.emi.api.stack.EmiIngredient.RENDER_ICON);return true;
+    }
+    @Override public boolean drawCategoryIcon(GuiGraphics g,RecipePreview.Category category,int x,int y){
+        ((EmiRecipeCategory)category.nativeCategory()).render(g,x,y,0);return true;
     }
     public RecipePreview.Category category(Object value){
         var c=(EmiRecipeCategory)value;return new RecipePreview.Category(c,new RecipePreview.Type(c.getId()),c.getName());
     }
     public Optional<RecipePreview.Layout> layout(Recipe<?> recipe,RecipePreview.Category preferred,RecipeDocument document){
+        if(com.pureneko.vjrm.recipe.GtRecipeSupport.isRecipe(recipe)&&preferred!=null&&preferred.nativeCategory() instanceof EmiRecipeCategory category){
+            for(String name:List.of("com.gregtechceu.gtceu.integration.recipeviewer.emi.recipe.GTEmiRecipe","com.gregtechceu.gtceu.integration.emi.recipe.GTEmiRecipe"))try{
+                var type=Class.forName(name);for(var constructor:type.getConstructors())if(constructor.getParameterCount()==2&&constructor.getParameterTypes()[0].isInstance(recipe)&&constructor.getParameterTypes()[1].isInstance(category))return Optional.of(new EmiNativePreview((EmiRecipe)constructor.newInstance(recipe,category)));
+            }catch(ReflectiveOperationException|LinkageError ignored){}
+        }
         var nativeLayout=EmiNativePreview.rebuild(recipe,document);
         if(nativeLayout.isPresent())return nativeLayout;
         if(net.minecraftforge.fml.ModList.get().isLoaded("jei"))return EmiJemiPreview.rebuild(recipe,preferred,document);

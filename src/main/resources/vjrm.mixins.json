@@ -4,7 +4,8 @@
   "package": "com.pureneko.vjrm.client.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
-    "EmiRecipeDisplayMixin"
+    "EmiRecipeDisplayMixin",
+    "JeiFluidHelperMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -10,15 +10,18 @@ minecraft {
     mappings channel: 'official', version: minecraft_version
     runs {
         configureEach {
+            if(project.hasProperty('verifyIcons')) property 'vjrm.verifyIcons','true'
             workingDirectory project.file("run/${name}")
             property 'forge.logging.console.level', 'info'
             args '--mixin','vjrm.mixins.json'
+            if(project.hasProperty('verifyGt')) property 'vjrm.verifyGt','true'
             if(project.hasProperty('verifyMekanism')) property 'vjrm.verifyMekanism','true'
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             mods { vjrm { source sourceSets.main; source sourceSets.test } }
         }
         client {
+            if(project.hasProperty('verifyIcons'))args '--width','1280','--height','720'
             if(project.hasProperty('verifyClient')) {
                 property 'vjrm.verifyClient','true'
                 property 'vjrm.viewer', project.findProperty('viewer') ?: 'jei'
@@ -26,16 +29,18 @@ minecraft {
             }
         }
         gameTestServer { property 'forge.enabledGameTestNamespaces','vjrm' }
-        server { args '--nogui' }
+        server { args '--nogui'; if(project.hasProperty('verifyGt')) property 'vjrm.verifyGtServer','true' }
     }
 }
 repositories {
+    flatDir { dirs "build/compat-deps" }
     maven { url = file('build/verification/maven'); content { includeGroup 'mekanism' } }
     maven { url = 'https://modmaven.dev'; content { includeGroup 'mekanism' }; metadataSources { mavenPom(); artifact() } }
     maven { url = 'https://modmaven.dev' }
     maven { url = 'https://maven.terraformersmc.com/releases/' }
 }
 dependencies {
+    if(project.hasProperty("verifyGt")) ["gt20","20-kubejs","20-rhino","20-architectury-api"].each { artifact -> runtimeOnly(fg.deobf("vjrm.verify:${artifact}:1")) { transitive=false } }
     if(project.hasProperty("verifyMekanism")) runtimeOnly(fg.deobf("mekanism:Mekanism:1.20.1-10.4.16.80")) { transitive=false }
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
@@ -62,6 +67,30 @@ tasks.register('verifyClient') {
     doLast { def result=file('build/verification/client/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException('Client verification failed; see build/verification/client/result.txt') }
 }
 tasks.matching { it.name == 'runClient' }.configureEach {doFirst{if(project.hasProperty('verifyClient'))file('build/verification/client/result.txt').delete()}}
+
+tasks.matching { it.name == 'runServer' }.configureEach { doFirst { def dir=file('run/server');dir.mkdirs();new File(dir,'eula.txt').text='eula=true\n';new File(dir,'server.properties').text='online-mode=false\nserver-port=25579\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=2\nsimulation-distance=2\n' } }
+
+tasks.matching { it.name == 'runServer' }.configureEach {
+    doFirst { if(project.hasProperty('verifyGt'))file('build/verification/gt-server/result.txt').delete() }
+    doLast { if(project.hasProperty('verifyGt')) { def result=file('build/verification/gt-server/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException('GT server verification failed') } }
+}
+
+tasks.matching { it.name == 'runClient' }.configureEach {
+    doFirst { if(project.hasProperty('verifyGt'))file('build/verification/gt-client/result.txt').delete() }
+    doLast { if(project.hasProperty('verifyGt')) { def result=file('build/verification/gt-client/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException('GT client verification failed') } }
+}
+
+tasks.matching { it.name == 'runClient' }.configureEach {
+    doFirst { if(project.hasProperty('verifyGt')) { def config=file('run/client/saves/Vjrm UI Verification/serverconfig/vjrm-server.toml');config.parentFile.mkdirs();config.text='exportPermissionLevel = 0\n' } }
+}
+
+// Explicitly check this run's result rather than accepting a successful game exit.
+tasks.matching { it.name in ['runClientCheck','runClient'] }.configureEach {
+    if(project.hasProperty('verifyIcons')) {
+        doFirst { file('build/verification/icons/result.txt').delete() }
+        doLast {def result=file('build/verification/icons/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException("Icon checks failed; see ${result}")}
+    }
+}
 
 // Resolve the release version into loader metadata before packaging.
 tasks.named('processResources') {

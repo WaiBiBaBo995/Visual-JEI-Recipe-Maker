@@ -46,7 +46,16 @@ public final class RecipeNetwork {
             if(!exportFits(request.json()))return new ExportResult(false,"vjrm.error.size");
             long now=System.currentTimeMillis();Long previous=LAST_EXPORT.put(player.getUUID(),now);
             if(previous!=null&&now-previous<1000)return new ExportResult(false,"rate");
-            var id=new ResourceLocation(request.id());var document=new RecipeDocument(JsonParser.parseString(request.json()).getAsJsonObject());document.decode(player.server.registryAccess(),id);
+            var id=new ResourceLocation(request.id());var submitted=JsonParser.parseString(request.json()).getAsJsonObject();
+            if(submitted.has("vjrm:script")){
+                if(!com.pureneko.vjrm.recipe.GtRecipeSupport.kubeLoaded())throw new IllegalArgumentException("vjrm.gt.kube_required");
+                String script=submitted.get("vjrm:script").getAsString();var draft=com.pureneko.vjrm.recipe.GtRecipeScript.parse(script);
+                if(!draft.id().equals(id.toString())||!com.pureneko.vjrm.recipe.GtRecipeSupport.isDocument(draft.json()))throw new IllegalArgumentException("vjrm.js.type");
+                new RecipeDocument(draft.json()).decode(player.server.registryAccess());
+                com.pureneko.vjrm.export.ScriptExporter.export(net.minecraftforge.fml.loading.FMLPaths.GAMEDIR.get(),id.getNamespace(),id.getPath(),script,request.overwrite());
+                return new ExportResult(true,id.toString());
+            }
+            var document=new RecipeDocument(submitted);document.decode(player.server.registryAccess(),id);
             var root=DatapackExporter.serverDatapackRoot(player.server,"vjrm_generated").toAbsolutePath();DatapackExporter.writePackMeta(root);
             DatapackExporter.export(root,id.getNamespace(),id.getPath(),document.json(),request.overwrite());return new ExportResult(true,id.toString());
         }catch(Exception ex){com.mojang.logging.LogUtils.getLogger().warn("Failed to export recipe {}",request.id(),ex);String detail=ex.getMessage()==null?ex.getClass().getSimpleName():ex.getMessage();return new ExportResult(false,detail.substring(0,Math.min(2000,detail.length())));}
