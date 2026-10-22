@@ -11,7 +11,7 @@ loom {
     runs {
         client { client(); runDir 'run/client' }
         server { server(); runDir 'run/server'; programArg '--nogui' }
-        clientCheck { client(); runDir 'run/client-check'; vmArg '-Dvjrm.verifyClient=true'; if(project.findProperty('viewer') in ['emi','both'])vmArg '-Dvjrm.verifyEmi=true'; programArgs '--quickPlaySingleplayer','Vjrm UI Verification','--width','1280','--height','720' }
+        clientCheck { if(project.hasProperty('verifyIcons'))vmArg '-Dvjrm.verifyIcons=true'; client(); runDir 'run/client-check'; vmArg '-Dvjrm.verifyClient=true'; if(project.findProperty('viewer') in ['emi','both'])vmArg '-Dvjrm.verifyEmi=true'; programArgs '--quickPlaySingleplayer','Vjrm UI Verification','--width','1280','--height','720' }
         serverCheck { server(); runDir 'run/server-check'; vmArg '-Dvjrm.verifyServer=true'; programArg '--nogui' }
     }
     mods { vjrm { sourceSet sourceSets.main }; if(project.hasProperty('verifyRuntime'))vjrm_checks { sourceSet sourceSets.test } }
@@ -54,4 +54,12 @@ tasks.named('runClientCheck') { doFirst {
 tasks.matching { it.name in ['runServerCheck','runClientCheck'] }.configureEach {
     dependsOn tasks.testClasses
     classpath += sourceSets.test.runtimeClasspath
+}
+
+// Explicitly check this run's result rather than accepting a successful game exit.
+tasks.matching { it.name in ['runClientCheck','runClient'] }.configureEach {
+    if(project.hasProperty('verifyIcons')) {
+        doFirst { file('build/verification/icons/result.txt').delete() }
+        doLast {def result=file('build/verification/icons/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException("Icon checks failed; see ${result}")}
+    }
 }
