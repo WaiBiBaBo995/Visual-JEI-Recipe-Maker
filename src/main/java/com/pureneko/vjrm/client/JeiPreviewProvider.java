@@ -15,6 +15,24 @@ final class JeiPreviewProvider implements RecipePreview.Provider {
     JeiPreviewProvider(){runtime=VjrmJeiPlugin::runtime;}
     JeiPreviewProvider(mezz.jei.api.runtime.IJeiRuntime runtime){this.runtime=()->runtime;}
 
+    @Override public boolean drawIngredientIcon(LegacyGraphics g,Object ingredient,int x,int y){
+        if(runtime.get()==null)return false;
+        Object value=ingredient instanceof net.neoforged.neoforge.fluids.FluidStack fluid?fluid.copyWithAmount(1000):ingredient;
+        if(value instanceof net.minecraft.world.item.ItemStack item){var copy=item.copy();copy.setCount(1);value=copy;}
+        // Icons show a full sample; recipe amounts and components remain untouched.
+        var renderer=runtime.get().getIngredientManager().getIngredientRenderer(value);
+        g.pose().pushPose();
+        try{g.pose().translate(x,y,0);float scale=16f/Math.max(16,Math.max(renderer.getWidth(),renderer.getHeight()));g.pose().scale(scale,scale,1);renderer.render(g.nativeGraphics,value,0,0);}
+        finally{g.pose().popPose();}
+        return true;
+    }
+    @Override public boolean drawCategoryIcon(LegacyGraphics g,RecipePreview.Category category,int x,int y){
+        var icon=((IRecipeCategory<?>)category.nativeCategory()).getIcon();if(icon==null)return false;
+        g.pose().pushPose();
+        try{g.pose().translate(x,y,0);float scale=16f/Math.max(16,Math.max(icon.getWidth(),icon.getHeight()));g.pose().scale(scale,scale,1);icon.draw(g.nativeGraphics,0,0);}
+        finally{g.pose().popPose();}
+        return true;
+    }
     public RecipePreview.Category category(Object value) {
         var category=(IRecipeCategory<?>)value;
         return new RecipePreview.Category(category,new RecipePreview.Type(category.getRecipeType().getUid()),category.getTitle());

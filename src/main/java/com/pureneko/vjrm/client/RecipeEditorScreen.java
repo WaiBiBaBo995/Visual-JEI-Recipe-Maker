@@ -26,6 +26,7 @@ public final class RecipeEditorScreen extends VjrmScreen {
     public record DropTarget(Rect2i area, Field field) { }
     private final Screen parent;
     private RecipeDocument document;
+    java.util.List<RecipeDocument.Field> annotationFields(){return document.manualFields();}
     private Category preferred;
     private Layout layout;
     private Object sourceDisplay;
@@ -149,6 +150,19 @@ public final class RecipeEditorScreen extends VjrmScreen {
             slots.stream().filter(slot->slot.getRole()==Role.OUTPUT).findFirst().ifPresent(slot->findField("results/0").ifPresent(f->bindings.put(slot,f)));
         }
         bindCreateProcessing(slots);
+        // Infusion adds the catalyst and ring components in JSON order. Equal ingredients
+        // must still bind to separate pedestals, rather than becoming ambiguous matches.
+        var data=document.json();
+        if(document.type().startsWith("thaumaturge:")&&data.has("components")&&data.get("components").isJsonArray()){
+            var itemInputs=slots.stream().filter(slot->slot.getRole()==Role.INPUT&&slot.getAllIngredients().anyMatch(v->v.getIngredient() instanceof ItemStack)).toList();
+            int offset=data.has("catalyst")?1:0,count=data.getAsJsonArray("components").size();
+            if(itemInputs.size()==count+offset){
+                if(offset==1)findField("catalyst").ifPresent(f->bindings.put(itemInputs.getFirst(),f));
+                for(int component=0;component<count;component++){
+                    var slot=itemInputs.get(component+offset);findField("components/"+component).ifPresent(f->bindings.put(slot,f));
+                }
+            }
+        }
         for(int i=0;i<slots.size();i++){
             var s=slots.get(i);String explicit=manualBindings.get(i);
             if(explicit!=null){fields.stream().filter(f->f.label().equals(explicit)).findFirst().ifPresent(f->bindings.put(s,f));continue;}
@@ -231,7 +245,7 @@ public final class RecipeEditorScreen extends VjrmScreen {
         if(selected!=null && accepts(selected,ingredient))out.add(new DropTarget(physical(new Rect2i(panelX()+8,controlsY()+22,panelWidth()-69,18)),selected));return out;
     }
     private Rect2i physical(Rect2i r){return new Rect2i(Math.round(r.getX()*uiScale),Math.round(r.getY()*uiScale),Math.max(1,Math.round(r.getWidth()*uiScale)),Math.max(1,Math.round(r.getHeight()*uiScale)));}
-    private boolean accepts(Field f,Object ingredient){return !f.raw()&&(!f.chemical().isEmpty()?ChemicalSupport.isStack(ingredient)&&f.chemical().equals(ChemicalSupport.stackKind(ingredient)):f.fluid()?ingredient instanceof FluidStack:ingredient instanceof ItemStack);}
+    private boolean accepts(Field f,Object ingredient){return !f.raw()&&(f.aspect()?com.pureneko.vjrm.recipe.AspectSupport.isStack(ingredient):!f.chemical().isEmpty()?ChemicalSupport.isStack(ingredient)&&f.chemical().equals(ChemicalSupport.stackKind(ingredient)):f.fluid()?ingredient instanceof FluidStack:ingredient instanceof ItemStack);}
     public void accept(Field field,Object ingredient){accept(field,ingredient,false);}
     private void accept(Field field,Object ingredient,boolean editQuantity){
         try{long n=editQuantity?Long.parseLong(amount):field.path().getFirst().equals("$crafting")?1:!field.chemical().isEmpty()?document.chemicalAmount(field):document.quantity(field);if(n<1)throw new IllegalArgumentException("vjrm.error.amount");var old=document.json();
@@ -252,7 +266,8 @@ public final class RecipeEditorScreen extends VjrmScreen {
             catch(RuntimeException ex){document.replace(before);status=t("error.invalid",ex.getMessage());}
             return;
         }
-        try{if(!selected.chemical().isEmpty()){
+        try{if(selected.aspect()){accept(selected,com.pureneko.vjrm.recipe.AspectSupport.fromId(value,1,minecraft.level.registryAccess()),true);
+        }else if(!selected.chemical().isEmpty()){
             if(value.startsWith("#")){var before=document.json();try{document.chemicalTag(selected,value.substring(1),Long.parseLong(amount));document.decode(minecraft.level.registryAccess());}catch(RuntimeException ex){document.replace(before);throw ex;}refresh();status=t("changed",selected.label());}
             else accept(selected,ChemicalSupport.fromId(value,1,selected.chemical(),minecraft.level.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE)),true);
         }else if(value.startsWith("#")){var before=document.json();try{int n=Integer.parseInt(amount);if(repeatedBindings.containsKey(selected.label())){document.tagRepeated(repeatedBindings.get(selected.label()),value.substring(1),n);manualBindings.clear();}else document.tag(selected,value.substring(1),n);document.decode(minecraft.level.registryAccess());}catch(RuntimeException ex){document.replace(before);throw ex;}refresh();status=t("changed",selected.label());}
@@ -270,7 +285,7 @@ public final class RecipeEditorScreen extends VjrmScreen {
         if(selected==null)return;
         if(selected.path().getFirst().equals("$crafting")){reject(t("error.empty_slot"),x,y);return;}
         if(selected.output()){reject(t("error.output_required"),x,y);return;}
-        boolean removable=selected.path().size()==2&&(selected.path().getFirst().equals("key")||selected.path().getFirst().equals("ingredients"));
+        boolean removable=selected.path().size()==2&&(selected.path().getFirst().equals("key")||Set.of("ingredients","components","aspects").contains(selected.path().getFirst()));
         if(!removable){reject(t("error.required"),x,y);return;}
         var old=document.json();
         try{
@@ -295,7 +310,7 @@ public final class RecipeEditorScreen extends VjrmScreen {
             if(slot>=0){draggedInventory=minecraft.player.getInventory().getItem(slot).copy();dragStartX=x;dragStartY=y;inventoryDragging=false;return true;}
         }
         if(layout!=null)for(var slot:drawSlots())if(screenRect(slot).contains((int)x,(int)y)){
-            selectedSlot=slot;if(bindings.containsKey(slot)){selected=bindings.get(slot);updateField();if(!selected.raw())slot.getDisplayedIngredient().ifPresent(i->{Object v=i.getIngredient();if(v instanceof ItemStack s){valueBox.setValue(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(s.getItem()).toString());countBox.setValue(Integer.toString(s.getCount()));}else if(v instanceof FluidStack f){valueBox.setValue(net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(f.getFluid()).toString());countBox.setValue(Integer.toString(f.getAmount()));}else if(ChemicalSupport.isStack(v)){valueBox.setValue(ChemicalSupport.id(v));countBox.setValue(Long.toString(document.chemicalAmount(selected)));}});if(button==1)remove(x,y);else status=t("selected",selected.label());}else {Component reason=t(slot.getRole()==Role.CATALYST?"error.catalyst":slot.getRole()==Role.RENDER_ONLY?"error.display_slot":"unbound");if(button==1)reject(reason,x,y);else status=reason;}return true;
+            selectedSlot=slot;if(bindings.containsKey(slot)){selected=bindings.get(slot);updateField();if(!selected.raw())slot.getDisplayedIngredient().ifPresent(i->{Object v=i.getIngredient();if(v instanceof ItemStack s){valueBox.setValue(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(s.getItem()).toString());countBox.setValue(Integer.toString(s.getCount()));}else if(v instanceof FluidStack f){valueBox.setValue(net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(f.getFluid()).toString());countBox.setValue(Integer.toString(f.getAmount()));}else if(com.pureneko.vjrm.recipe.AspectSupport.isStack(v)){valueBox.setValue(com.pureneko.vjrm.recipe.AspectSupport.id(v));countBox.setValue(Integer.toString(document.quantity(selected)));}else if(ChemicalSupport.isStack(v)){valueBox.setValue(ChemicalSupport.id(v));countBox.setValue(Long.toString(document.chemicalAmount(selected)));}});if(button==1)remove(x,y);else status=t("selected",selected.label());}else {Component reason=t(slot.getRole()==Role.CATALYST?"error.catalyst":slot.getRole()==Role.RENDER_ONLY?"error.display_slot":"unbound");if(button==1)reject(reason,x,y);else status=reason;}return true;
         }return super.mouseClicked(x,y,button);
     }
     private Rect2i inventoryRect(int index){

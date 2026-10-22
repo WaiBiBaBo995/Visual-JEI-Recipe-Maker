@@ -103,5 +103,7 @@
   "vjrm.manual.removed": "Removed manual field definition.",
   "vjrm.manual.raw_help": "Raw JSON: enter valid JSON in the editor value box; no ingredient drag.",
   "vjrm.manual.drag_help": "Private wrapper: select the inner ingredient or ID node for replacement.",
-  "vjrm.error.field_path": "Choose an existing node; edit the recipe type in the JSON editor."
+  "vjrm.error.field_path": "Choose an existing node; edit the recipe type in the JSON editor.",
+  "vjrm.manual.kind.aspect": "Aspect",
+  "vjrm.error.aspect": "Invalid aspect or Thaumaturge is unavailable"
 }

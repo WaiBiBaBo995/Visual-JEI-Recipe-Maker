@@ -30,7 +30,7 @@ with zipfile.ZipFile(SOURCE) as jar:
     assert classes and all(struct.unpack('>H', jar.read(n)[6:8])[0] == MAJOR for n in classes), 'Incorrect Java target'
     assert not any('Checks' in n or 'Verification' in n or 'TestMachine' in n or 'PortClientEntrypoint' in n or 'PortCheckEntrypoint' in n for n in names), 'Test fixtures in release'
     assert not any(n.startswith(('mezz/', 'dev/emi/', 'mekanism/', 'data/vjrm/')) for n in names), 'Third-party code or test recipes in release'
-    for required in ('RecipeEditorScreen', 'JsonDraftScreen', 'ManualFieldScreen', 'NumericFieldsScreen'):
+    for required in ('RecipeEditorScreen', 'JsonDraftScreen', 'ManualFieldScreen', 'NumericFieldsScreen', 'IngredientAnnotations', 'AnnotatedTextLayout'):
         assert f'com/pureneko/vjrm/client/{required}.class' in names, f'Missing {required}'
     for lang, label in {'en_us':'Player inventory', 'zh_cn':'玩家物品栏', 'zh_tw':'玩家物品欄'}.items():
         data = json.loads(jar.read(f'assets/vjrm/lang/{lang}.json'))
@@ -59,12 +59,18 @@ with zipfile.ZipFile(SOURCE) as jar:
     else:
         assert 'com/pureneko/vjrm/client/mixin/EmiRecipeDisplayMixin.class' in names
 
+    if LOADER != 'fabric' and MC in ('1.20.1', '1.21.1'):
+        for required in ('recipe/GtRecipeSupport', 'recipe/GtRecipeScript', 'export/ScriptExporter', 'client/GtContentScreen'):
+            assert f'com/pureneko/vjrm/{required}.class' in names, f'Missing new integration: {required}'
+    if LOADER == 'neoforge' and MC == '26.1.2':
+        assert 'com/pureneko/vjrm/recipe/AspectSupport.class' in names
+
 OUT = ROOT / 'dist'
 OUT.mkdir(exist_ok=True)
 target = OUT / f'{NAME}.jar'
 shutil.copy2(SOURCE, target)
 source_zip = OUT / f'{NAME}-sources.zip'
-files = [ROOT / name for name in ('.gitignore', 'build.gradle', 'gradle.properties', 'gradlew.bat', 'settings.gradle', 'README.md', 'CHANGELOG.md')]
+files = [ROOT / name for name in ('.gitignore', 'build.gradle', 'gradle.properties', 'gradlew.bat', 'settings.gradle', 'README.md', 'CHANGELOG.md', 'COMPATIBILITY.md')]
 for directory in ('src', 'gradle', 'tools', '.github'):
     files.extend(p for p in (ROOT / directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts)
 with zipfile.ZipFile(source_zip, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:

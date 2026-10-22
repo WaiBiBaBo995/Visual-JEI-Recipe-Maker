@@ -103,5 +103,7 @@
   "vjrm.manual.removed": "已移除手动字段定义。",
   "vjrm.manual.raw_help": "原始 JSON：在编辑器值栏输入有效 JSON，不支持原料拖拽。",
   "vjrm.manual.drag_help": "私有包装格式请选择内部原料或 ID 节点，避免替换整个包装。",
-  "vjrm.error.field_path": "请选择存在的节点；配方 type 请通过「编辑 JSON」修改。"
+  "vjrm.error.field_path": "请选择存在的节点；配方 type 请通过「编辑 JSON」修改。",
+  "vjrm.manual.kind.aspect": "源质",
+  "vjrm.error.aspect": "源质无效或 Thaumaturge 未加载"
 }

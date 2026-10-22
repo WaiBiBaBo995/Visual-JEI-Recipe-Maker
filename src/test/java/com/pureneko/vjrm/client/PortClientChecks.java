@@ -43,7 +43,7 @@ public final class PortClientChecks {
         throw new AssertionError("Custom datapack recipe missing from JEI");
     }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){
-        if(!Boolean.getBoolean("vjrm.verifyClient")||done)return;
+        if(Boolean.getBoolean("vjrm.verifyIcons")||Boolean.getBoolean("vjrm.verifyThaum")||!Boolean.getBoolean("vjrm.verifyClient")||done)return;
         var mc=Minecraft.getInstance();
         try{
             if(System.currentTimeMillis()-started>240000)throw new AssertionError("Client checks timed out at "+stage);
@@ -136,7 +136,7 @@ public final class PortClientChecks {
         }catch(Throwable ex){fail(ex);}
     }
     @SubscribeEvent public static void rendered(RenderFrameEvent.Post event){
-        if(!Boolean.getBoolean("vjrm.verifyClient")||done||capturing)return;
+        if(Boolean.getBoolean("vjrm.verifyIcons")||Boolean.getBoolean("vjrm.verifyThaum")||!Boolean.getBoolean("vjrm.verifyClient")||done||capturing)return;
         String name=switch(stage){case 3->"vanilla-editor.png";case 6->"json-editor.png";case 8->"numeric-editor.png";case 10->"manual-fields.png";case 14->"raw-recipe-copied.png";default->null;};
         if(name==null||++frames<12)return;
         capturing=true;

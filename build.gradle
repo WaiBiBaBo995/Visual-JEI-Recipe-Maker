@@ -12,19 +12,22 @@ neoForge {
     runs {
         client { client(); gameDirectory = file('run/client') }
         clientCheck {
+            if(project.hasProperty("verifyIcons")) systemProperty "vjrm.verifyIcons","true"
             client(); gameDirectory = file('run/client-check')
             systemProperty 'vjrm.verifyClient','true'
+            if(project.hasProperty('verifyThaum'))systemProperty 'vjrm.verifyThaum','true'
             programArgument '--quickPlaySingleplayer'
             programArgument 'Vjrm UI Verification'
             programArgument '--width'; programArgument '1280'
             programArgument '--height'; programArgument '720'
         }
         server { server(); gameDirectory = file('run/server'); programArgument '--nogui' }
-        serverCheck { server(); gameDirectory = file('run/server-check'); programArgument '--nogui'; systemProperty 'vjrm.verifyServer','true' }
+        serverCheck { server(); gameDirectory = file('run/server-check'); programArgument '--nogui'; systemProperty 'vjrm.verifyServer','true'; if(project.hasProperty('verifyThaum'))systemProperty 'vjrm.verifyThaum','true' }
     }
     mods { vjrm { sourceSet(sourceSets.main); if(project.hasProperty("verifyRuntime"))sourceSet(sourceSets.test) } }
 }
 dependencies {
+    if(project.hasProperty("verifyThaum")) runtimeOnly files("build/compat-deps/thaum26.jar","build/compat-deps/26-curios.jar","build/compat-deps/26-lithostitched.jar")
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
     if(!project.hasProperty("withoutJei"))runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 }
@@ -69,6 +72,14 @@ tasks.named('runClientCheck') {
             def result=file("build/verification/${side.toLowerCase()}/result.txt")
             if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException("${side} checks failed; see ${result}")
         }
+    }
+}
+
+// Explicitly check this run's result rather than accepting a successful game exit.
+tasks.matching { it.name in ['runClientCheck','runClient'] }.configureEach {
+    if(project.hasProperty('verifyIcons')) {
+        doFirst { file('build/verification/icons/result.txt').delete() }
+        doLast {def result=file('build/verification/icons/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException("Icon checks failed; see ${result}")}
     }
 }
 

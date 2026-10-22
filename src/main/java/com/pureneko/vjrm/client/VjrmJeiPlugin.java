@@ -114,6 +114,7 @@ public final class VjrmJeiPlugin implements IModPlugin {
         var categories = new ArrayList<mezz.jei.api.recipe.category.IRecipeCategory<?>>();
         if (preferred != null) categories.add(preferred);
         else categories.addAll(runtime.getRecipeManager().createRecipeCategoryLookup().get().toList());
+        categories.sort(java.util.Comparator.comparingInt(c->categoryMatches(c,recipe,c==preferred)?0:1));
         var holder = new RecipeHolder<>(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE,Identifier.fromNamespaceAndPath("vjrm", "preview")), recipe);
         for (var c : categories) {
             mezz.jei.api.recipe.category.IRecipeCategory category = c;

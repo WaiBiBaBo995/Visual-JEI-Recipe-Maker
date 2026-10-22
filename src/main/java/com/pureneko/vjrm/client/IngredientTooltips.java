@@ -18,6 +18,8 @@ final class IngredientTooltips {
         if(value instanceof ItemStack item&&!item.isEmpty())lines.addAll(Screen.getTooltipFromItem(Minecraft.getInstance(),item));
         else if(value instanceof FluidStack fluid&&!fluid.isEmpty()){
             lines.add(fluid.getHoverName());lines.add(Component.translatable("vjrm.tooltip.amount",fluid.getAmount()+" mB").withStyle(ChatFormatting.GRAY));
+        }else if(com.pureneko.vjrm.recipe.AspectSupport.isStack(value)){
+            lines.add(com.pureneko.vjrm.recipe.AspectSupport.name(value));lines.add(Component.translatable("vjrm.tooltip.amount",com.pureneko.vjrm.recipe.AspectSupport.amount(value)).withStyle(ChatFormatting.GRAY));
         }else if(ChemicalSupport.isStack(value)){
             Object chemical=ChemicalSupport.unwrap(value);
             try{lines.add((Component)chemical.getClass().getMethod("getTextComponent").invoke(chemical));lines.add(Component.translatable("vjrm.tooltip.amount",chemical.getClass().getMethod("getAmount").invoke(chemical)).withStyle(ChatFormatting.GRAY));}
@@ -29,6 +31,7 @@ final class IngredientTooltips {
         var lines=new ArrayList<Component>(nativeLines);Identifier id=null;
         if(value instanceof ItemStack item&&!item.isEmpty())id=BuiltInRegistries.ITEM.getKey(item.getItem());
         else if(value instanceof FluidStack fluid&&!fluid.isEmpty())id=BuiltInRegistries.FLUID.getKey(fluid.getFluid());
+        else if(com.pureneko.vjrm.recipe.AspectSupport.isStack(value))id=Identifier.tryParse(com.pureneko.vjrm.recipe.AspectSupport.id(value));
         else if(ChemicalSupport.isStack(value))id=Identifier.tryParse(ChemicalSupport.id(value));
         if(id!=null){
             String key=id.toString(),namespace=id.getNamespace();

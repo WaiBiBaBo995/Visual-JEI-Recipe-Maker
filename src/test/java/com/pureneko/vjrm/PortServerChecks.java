@@ -54,6 +54,7 @@ public final class PortServerChecks {
             var before=numbers.json();
             try{numbers.setNumber(time,"1.25",registries);throw new AssertionError("Fractional time accepted");}catch(IllegalArgumentException expected){}
             check(numbers.json().equals(before),"Invalid numeric edit was not rolled back");
+            ThaumaturgeChecks.run(server);
             int total=0,withInputs=0;
             for(var holder:server.getRecipeManager().getRecipes()){
                 var id=holder.id().identifier();

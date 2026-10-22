@@ -28,6 +28,6 @@ jobs:
         run: python tools/package_release.py
       - uses: actions/upload-artifact@v4
         with:
-          name: vjrm-1.0.1-neoforge-26.1.2
+          name: vjrm-1.0.2-neoforge-26.1.2
           path: dist/*
           if-no-files-found: error

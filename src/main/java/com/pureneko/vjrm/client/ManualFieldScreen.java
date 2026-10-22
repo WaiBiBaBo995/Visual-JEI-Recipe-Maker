@@ -28,6 +28,7 @@ final class ManualFieldScreen extends VjrmScreen {
     ManualFieldScreen(Screen parent,RecipeDocument document,Field initial,Consumer<Field> add,Consumer<List<String>> remove){
         super(t("title"));this.parent=parent;this.document=document;this.add=add;this.remove=remove;nodes=JsonFieldPaths.nodes(document.json());
         if(net.neoforged.fml.ModList.get().isLoaded("mekanism"))kinds.addAll(ChemicalSupport.unified()?List.of("chemical"):List.of("gas","infuse_type","pigment","slurry"));
+        if(AspectSupport.available())kinds.add("aspect");
         if(initial!=null){path="/"+initial.label();kind=initial.raw()?"json":!initial.chemical().isEmpty()?initial.chemical():initial.fluid()?"fluid":"item";output=initial.output();}
     }
     private static Component t(String key,Object... args){return Component.translatable("vjrm.manual."+key,args);}

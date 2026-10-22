@@ -9,7 +9,7 @@ import java.util.*;
 
 /** Searchable, scrollable choices; modded serializers use an actual datapack recipe as their template. */
 final class RecipeTypeScreen extends VjrmScreen {
-    private record Entry(String label,String search,Runnable choose) { }
+    private record Entry(String label,String search,RecipePreview.Category category,Runnable choose) { }
     private final RecipeEditorScreen parent;
     private final List<Entry> entries=new ArrayList<>();
     private List<Entry> filtered=List.of();
@@ -35,13 +35,13 @@ final class RecipeTypeScreen extends VjrmScreen {
                 var document=RecipeDocument.template(type);
                 if(minecraft.level!=null)RecipePreview.layout(document.decode(minecraft.level.registryAccess()),null,document).ifPresent(layout->{
                     String label=RecipePreview.typeLabel("minecraft:"+type,layout.getRecipeCategory()).getString();
-                    entries.add(new Entry(label,label.toLowerCase(Locale.ROOT),()->{parent.loadTemplate(document,null,null);minecraft.setScreen(parent);}));
+                    entries.add(new Entry(label,label.toLowerCase(Locale.ROOT),layout.getRecipeCategory(),()->{parent.loadTemplate(document,null,null);minecraft.setScreen(parent);}));
                 });
             }
             RecipeSources.catalog(samples->{
                 for(var template:RecipePreview.templates(samples)){
                     if(template.category().getRecipeType().getUid().getNamespace().equals("minecraft") && RecipeDocument.TYPES.stream().anyMatch(t->template.serializer().equals("minecraft:"+t)))continue;
-                    entries.add(new Entry(template.label(),template.label().toLowerCase(Locale.ROOT),()->{
+                    entries.add(new Entry(template.label(),template.label().toLowerCase(Locale.ROOT),template.category(),()->{
                         status=Component.translatable("vjrm.types.loading");
                         RecipeSources.request(template.id(),document->{if(minecraft.screen==this){parent.loadTemplate(document,template.category(),template.display());minecraft.setScreen(parent);}},error->status=Component.translatable(error));
                     }));
@@ -56,7 +56,7 @@ final class RecipeTypeScreen extends VjrmScreen {
         scroll=Math.max(0,Math.min(scroll,Math.max(0,filtered.size()-rows.size())));
         for(int i=0;i<rows.size();i++){
             var button=rows.get(i);int index=scroll+i;button.visible=index<filtered.size();
-            if(button.visible){String label=filtered.get(index).label;button.setMessage(Component.literal(font.plainSubstrByWidth(label,button.getWidth()-12)));button.setTooltip(Tooltip.create(Component.literal(label)));}
+            if(button.visible){String label=filtered.get(index).label;button.setMessage(Component.literal(font.plainSubstrByWidth(label,button.getWidth()-48)));button.setTooltip(Tooltip.create(Component.literal(label)));}
         }
     }
     @Override public boolean mouseScrolled(double x,double y,double dx,double dy){scroll-=Integer.signum((int)Math.signum(dy))*3;filter();return true;}
@@ -64,6 +64,10 @@ final class RecipeTypeScreen extends VjrmScreen {
     @Override public void render(LegacyGraphics g,int x,int y,float pt){
         super.render(g,x,y,pt);g.drawCenteredString(font,title,width/2,10,0xFFFFFF);
         g.drawString(font,font.plainSubstrByWidth(status.getString(),width-24),12,height-24,0xFFFFFF);
+        for(int i=0;i<rows.size()&&scroll+i<filtered.size();i++){
+            var button=rows.get(i);if(!button.visible)continue;var entry=filtered.get(scroll+i);
+            RecipePreview.drawCategoryIcon(g,entry.category,button.getX()+3,button.getY()+2);
+        }
         if(filtered.size()>rows.size())g.drawString(font,(scroll+1)+"–"+Math.min(scroll+rows.size(),filtered.size())+" / "+filtered.size(),width-100,height-12,0xAAAAAA);
     }
     @Override public void onClose(){minecraft.setScreen(parent);}

@@ -1,6 +1,18 @@
-# Visual JEI Recipe Maker 1.0.1 -English-
+# Visual JEI Recipe Maker 1.0.2 -English-
 
-Independent **Minecraft 26.1.2 NeoForge** edition, version **1.0.1**, using **Java 25**. Other Minecraft/loader editions are maintained on separate branches.
+## New in 1.0.2
+
+JSON and supported GTCEu JS pages display native browser icons after recognized item/fluid IDs, including manually added fields. Recipe type search also shows category icons. Icons belong to the display layer: copying, formatting, and exports keep the original text unchanged. Wrapping, selection, mouse positioning, and cursor movement account for icon space; invalid drafts clear stale icons. Fluid samples fill their icons, and 26.1.2 separates ingredient/text rendering layers for correct highlighting and clipping.
+
+All editions use the exact mod metadata version `1.0.2`. The inventory label retains its local-language name without the parenthetical explanation. The 26.1.2 editions support JEI only. See [CHANGELOG.md](CHANGELOG.md) for full history and [COMPATIBILITY.md](COMPATIBILITY.md) for platform-specific integrations.
+
+## Thaumaturge
+
+Available on **NeoForge 26.1.2** with JEI 29.x. Install Thaumaturge and its dependencies separately. Each `{ "aspect": "thaumaturge:ignis", "amount": 10 }` in `aspects` becomes an independent aspect field resolved through public codecs and the active datapack registry, including additional aspects. Drag JEI aspects, edit IDs and positive counts, or choose **Aspect** in manual fields. Thaumaturge still renders native icons, names, and research rules; tooltips append IDs, mod names, and gold bindings.
+
+`components` arrays map to independent input slots. Duplicate materials bind by array position; alternatives within one entry remain one slot. Data component ingredient conditions are retained as whole ingredients, preventing inner aspect components from becoming extra slots. Replacements update the selected ingredient condition while retaining other recipe data. JSON editing/highlighting/copying and datapack export remain available. See [COMPATIBILITY.md](COMPATIBILITY.md).
+
+Independent **Minecraft 26.1.2 NeoForge** edition, version **1.0.2**, using **Java 25**. Other Minecraft/loader editions are maintained on separate branches.
 
 ## Installation
 
@@ -48,11 +60,24 @@ Each branch is an independent project. Install the JAR matching both Minecraft a
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-Version **1.0.1** includes the updated editor and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.1`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
+Version **1.0.2** includes native item/fluid text icons, recipe category icons, the updated editor, and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.2`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
 
-# Visual JEI Recipe Maker 1.0.1 -中文-
 
-独立的 **NeoForge 26.1.2** 移植工程，使用 **Java 25**。其他版本分别位于对应分支；1.21.1 NeoForge 位于 `main`。
+# Visual JEI Recipe Maker 1.0.2 -中文-
+
+## 1.0.2 更新
+
+JSON 与适用版本的 GTCEu JS 编辑页在已识别的物品/流体 ID 后显示原生图标，手动字段也参与识别；配方类型检索显示类别图标。图标只属于显示层，不改变草稿、复制、格式化或导出的文字。换行、鼠标定位、选择与光标移动按图标占位计算，无效草稿会清理过期图标。流体图标使用满幅示例；26.1.2 分离材料与文字渲染层，保留高亮和裁切。
+
+模组元数据统一为精确版本 `1.0.2`，玩家物品栏标题保留各语言名称并删除括号说明。26.1.2 仅支持 JEI。完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+
+## Thaumaturge
+
+**26.1.2 NeoForge** 支持 Thaumaturge `AspectInstance` 源质槽、源质 ID、数量、拖拽、提示与手动绑定。通过公开 codec 和当前数据包注册表解析，包括附加源质；原生图标与研究解锁规则由 Thaumaturge 负责。
+
+`components` 数组中的多个输入按位置分别绑定，重复材料互不影响，数据组件材料条件作为完整材料处理。继续使用 JSON 编辑与数据包导出。完整用法见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+
+独立的 **NeoForge 26.1.2** 移植工程，使用 **Java 25**。其他版本位于各自分支；1.21.1 NeoForge 位于 `main`。
 
 ## 安装
 
@@ -89,6 +114,10 @@ JEI「复制到 VJRM 编辑器」书本按钮沿用默认隐藏设置。在游�
 
 更新记录见 [CHANGELOG.md](CHANGELOG.md)。。
 
+本次 GTCEu / Thaumaturge 兼容的具体用法见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+
+1.0.2：JSON 编辑页显示已识别物品/流体字符串的原生图标；配方类型检索显示类别图标。图标不改变草稿或剪贴板文本。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 版本与分支
 
 每个分支都是独立工程。请安装同时匹配 Minecraft 版本与加载器的 JAR。
@@ -102,4 +131,4 @@ JEI「复制到 VJRM 编辑器」书本按钮沿用默认隐藏设置。在游�
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-当前版本 **1.0.1** 包含新版编辑器及金色绑定字段提示。玩家物品栏标题已移除括号说明；模组元数据中的版本为精确的 `1.0.1`，JAR 文件名可附带游戏版本和加载器标识。历史更新见 [CHANGELOG.md](CHANGELOG.md)。
+各分支均为独立可构建工程，安装时匹配游戏版本与加载器。
