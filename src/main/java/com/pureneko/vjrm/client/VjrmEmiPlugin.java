@@ -110,6 +110,15 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
         var backing=recipe.getBackingRecipe();if(backing!=null)return backing.getId();
         var id=recipe.getId();return id!=null&&!id.getPath().startsWith("/")&&mc.level.getRecipeManager().byKey(id).isPresent()?id:null;
     }
+    @Override public boolean drawIngredientIcon(GuiGraphics g,Object ingredient,int x,int y){
+        dev.emi.emi.api.stack.EmiStack stack;
+        if(ingredient instanceof net.minecraft.world.item.ItemStack item)stack=dev.emi.emi.api.stack.EmiStack.of(item);
+        else if(ingredient instanceof com.pureneko.vjrm.platform.FluidStack fluid)stack=FabricEmiStack.of(fluid);else return false;
+        stack.render(g,x,y,0,dev.emi.emi.api.stack.EmiIngredient.RENDER_ICON);return true;
+    }
+    @Override public boolean drawCategoryIcon(GuiGraphics g,RecipePreview.Category category,int x,int y){
+        ((EmiRecipeCategory)category.nativeCategory()).render(g,x,y,0);return true;
+    }
     public RecipePreview.Category category(Object value){
         var c=(EmiRecipeCategory)value;return new RecipePreview.Category(c,new RecipePreview.Type(c.getId()),c.getName());
     }
