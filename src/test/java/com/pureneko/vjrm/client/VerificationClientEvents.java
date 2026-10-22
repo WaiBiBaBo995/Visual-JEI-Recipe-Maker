@@ -13,11 +13,11 @@ public final class VerificationClientEvents {
         catch(ReflectiveOperationException ex){throw new RuntimeException(ex);}
     }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){
-        if(!Boolean.getBoolean("vjrm.verifyClient"))return;
+        if(Boolean.getBoolean("vjrm.verifyIcons")||!Boolean.getBoolean("vjrm.verifyClient")||Boolean.getBoolean("vjrm.verifyGt"))return;
         dispatch(Boolean.getBoolean("vjrm.verifyEmi")?"EmiClientChecks":"ClientChecks","tick",event);
     }
     @SubscribeEvent public static void rendered(RenderFrameEvent.Post event){
-        if(!Boolean.getBoolean("vjrm.verifyClient"))return;
+        if(Boolean.getBoolean("vjrm.verifyIcons")||!Boolean.getBoolean("vjrm.verifyClient")||Boolean.getBoolean("vjrm.verifyGt"))return;
         dispatch(Boolean.getBoolean("vjrm.verifyEmi")?"EmiClientChecks":"ClientChecks","rendered",event);
         if(Boolean.getBoolean("vjrm.verifyCreate")&&!Boolean.getBoolean("vjrm.verifyEmi"))dispatch("CreateClientChecks","rendered",event);
     }

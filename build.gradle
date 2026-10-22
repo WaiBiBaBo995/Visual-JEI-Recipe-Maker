@@ -18,7 +18,9 @@ neoForge {
     runs {
         client { client(); gameDirectory = file('run/client') }
         clientCheck {
+            if(project.hasProperty("verifyIcons")){ systemProperty "vjrm.verifyIcons","true"; programArgument "--width"; programArgument "1280"; programArgument "--height"; programArgument "720" }
             client(); gameDirectory = file('run/client-check')
+            if(project.hasProperty("verifyGt")) systemProperty "vjrm.verifyGt","true"
             systemProperty 'vjrm.verifyClient', 'true'
             if (project.hasProperty('viewer') && project.property('viewer') in ['emi', 'both']) systemProperty 'vjrm.verifyEmi', 'true'
             if (project.hasProperty('verifyCreate')) systemProperty 'vjrm.verifyCreate', 'true'
@@ -26,6 +28,7 @@ neoForge {
             programArgument '--quickPlaySingleplayer'
             programArgument 'Vjrm UI Verification'
         }
+        gtServer { server(); gameDirectory = file(project.hasProperty("gtSnapshotRuntime")?"run/gt-server-snapshot":"run/gt-stable-server"); programArgument "--nogui"; systemProperty "vjrm.verifyGtServer","true" }
         server { server(); gameDirectory = file('run/server'); programArgument '--nogui' }
         recipeCheck {
             type = 'gameTestServer'
@@ -38,6 +41,7 @@ neoForge {
 jar { manifest { attributes('Implementation-Version': project.version) } }
 
 dependencies {
+    if(project.hasProperty("verifyGt")) { if(project.hasProperty("gtSnapshotRuntime"))runtimeOnly files("build/compat-deps/gt21-snapshot.jar","build/compat-deps/21-kubejs-current.jar","build/compat-deps/21-rhino.jar","build/compat-deps/21-configuration.jar"); else runtimeOnly files("build/compat-deps/gt21.jar","build/compat-deps/21-kubejs.jar","build/compat-deps/21-rhino.jar","build/compat-deps/21-configuration.jar") }
     if (project.hasProperty('verifyAstral')) runtimeOnly fileTree('build/verification/deps/astral') { include '*.jar' }
     if (project.hasProperty('verifyCreate')) runtimeOnly files('build/verification/deps/create-1.21.1-6.0.10.jar')
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
@@ -60,6 +64,26 @@ tasks.register('verifyClient') {
     doLast {
         def result = file('build/verification/client/result.txt')
         if (!result.exists() || !result.text.startsWith('PASS:')) throw new GradleException('Client verification failed; see build/verification/client/result.txt')
+    }
+}
+
+tasks.named('runGtServer') { doFirst { def dir=file(project.hasProperty('gtSnapshotRuntime')?'run/gt-server-snapshot':'run/gt-stable-server');dir.mkdirs();new File(dir,'eula.txt').text='eula=true\n';new File(dir,'server.properties').text='online-mode=false\nserver-port=25578\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=2\nsimulation-distance=2\n' } }
+
+tasks.matching { it.name == 'runGtServer' }.configureEach {
+    doFirst { if(project.hasProperty('verifyGt'))file('build/verification/gt-server/result.txt').delete() }
+    doLast { if(project.hasProperty('verifyGt')) { def result=file('build/verification/gt-server/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException('GT server verification failed') } }
+}
+
+tasks.matching { it.name == 'runClientCheck' }.configureEach {
+    doFirst { if(project.hasProperty('verifyGt'))file('build/verification/gt-client/result.txt').delete() }
+    doLast { if(project.hasProperty('verifyGt')) { def result=file('build/verification/gt-client/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException('GT client verification failed') } }
+}
+
+// Explicitly check this run's result rather than accepting a successful game exit.
+tasks.matching { it.name in ['runClientCheck','runClient'] }.configureEach {
+    if(project.hasProperty('verifyIcons')) {
+        doFirst { file('build/verification/icons/result.txt').delete(); def options=file('run/client-check/options.txt'); if(options.exists())options.text=options.text.replaceAll('(?m)^guiScale:.*', 'guiScale:2') }
+        doLast {def result=file('build/verification/icons/result.txt');if(!result.exists()||!result.text.startsWith('PASS:'))throw new GradleException("Icon checks failed; see ${result}")}
     }
 }
 

@@ -5,6 +5,9 @@ import com.pureneko.vjrm.recipe.RecipeDocument;
 import com.pureneko.vjrm.recipe.ChemicalSupport;
 import com.pureneko.vjrm.recipe.RecipeDocument.Field;
 import com.pureneko.vjrm.export.DatapackExporter;
+import com.pureneko.vjrm.export.ScriptExporter;
+import com.pureneko.vjrm.recipe.GtRecipeSupport;
+import com.pureneko.vjrm.recipe.GtRecipeScript;
 import com.pureneko.vjrm.network.RecipeNetwork;
 import com.pureneko.vjrm.client.RecipePreview.Layout;
 import com.pureneko.vjrm.client.RecipePreview.Slot;
@@ -26,8 +29,10 @@ public final class RecipeEditorScreen extends Screen {
     public record DropTarget(Rect2i area, Field field) { }
     private final Screen parent;
     private RecipeDocument document;
+    java.util.List<RecipeDocument.Field> annotationFields(){return document.manualFields();}
     private Category preferred;
     private Layout layout;
+    private String scriptText;
     private Object sourceDisplay;
     private RecipeDocument sourceDocument;
     private boolean usingSourceLayout;
@@ -81,22 +86,23 @@ public final class RecipeEditorScreen extends Screen {
         draggedInventory=ItemStack.EMPTY;inventoryDragging=false;
         int x=panelX()+8,y=panelY(),w=panelWidth()-16,c=controlsY();
         var typeButton=button(x,y+22,92,"type",b->minecraft.setScreen(new RecipeTypeScreen(this)));
-        button(x+96,y+22,44,"numbers",b->minecraft.setScreen(new NumericFieldsScreen(this,document,()->{refresh();status=t("changed","JSON");})));
+        button(x+96,y+22,44,"numbers",b->minecraft.setScreen(new NumericFieldsScreen(this,document,()->{refresh();status=t("changed",gtMode()?"JS":"JSON");})));
         typeButton.setTooltip(Tooltip.create(t("type.name",document.type())));
         idBox=addRenderableWidget(new EditBox(font,x+144,y+22,w-144,18,t("recipe_id")));idBox.setMaxLength(200);idBox.setValue(recipeId);idBox.setResponder(s->recipeId=s);idBox.setTooltip(Tooltip.create(t("recipe_id")));
         fieldButton=button(x,y+60,w-128,"field",b->cycleField());
-        button(x+w-124,y+60,60,"manual.open",b->openManualFields());
+        button(x+w-124,y+60,60,gtMode()?"gt.fields":"manual.open",b->openManualFields());
         button(x+w-60,y+60,60,"bind",b->{if(selectedSlot!=null && selected!=null){manualBindings.put(drawSlots().indexOf(selectedSlot),selected.label());repeatedBindings.remove(selected.label());bindings.put(selectedSlot,selected);status=t("bound",selected.label());}else status=t("select_slot");});
         valueBox=addRenderableWidget(new EditBox(font,x,c+22,w-53,18,t("value")));valueBox.setMaxLength(com.pureneko.vjrm.recipe.RecipeSource.MAX_JSON);valueBox.setValue(value);valueBox.setHint(t("value"));valueBox.setResponder(s->value=s);
         countBox=addRenderableWidget(new EditBox(font,x+w-49,c+22,49,18,t("amount")));countBox.setMaxLength(19);countBox.setValue(amount);countBox.setResponder(s->amount=s);
         int bw=(w-4)/2;
         button(x,c+44,bw,"apply",b->applyValue());
-        button(x+bw+4,c+44,w-bw-4,"json",b->minecraft.setScreen(new JsonDraftScreen(this,document.json(),j->{
-            boolean changedType=!document.type().equals(j.get("type").getAsString());document.replace(j);selected=null;manualBindings.clear();sourceBindings.clear();
-            if(changedType){preferred=null;sourceDisplay=null;sourceDocument=new RecipeDocument(j);}
-        })));
+        button(x+bw+4,c+44,w-bw-4,gtMode()?"js":"json",b->openDraft());
+        if(gtMode()){
+            button(x,y+80,(w-4)/2,"gt.add_input",b->addGtField(false));
+            button(x+(w-4)/2+4,y+80,(w-4)/2,"gt.add_output",b->addGtField(true));
+        }
         overwriteButton=button(x,c+66,w,"overwrite.off",b->{overwrite=!overwrite;overwriteButton.setMessage(t(overwrite?"overwrite.on":"overwrite.off"));});overwriteButton.setMessage(t(overwrite?"overwrite.on":"overwrite.off"));
-        serverButton=button(x,c+88,(w-4)/2,"export.server",b->export(false));clientButton=button(x+(w-4)/2+4,c+88,(w-4)/2,"export.client",b->export(true));
+        serverButton=button(x,c+88,(w-4)/2,gtMode()?"gt.export.server":"export.server",b->export(false));clientButton=button(x+(w-4)/2+4,c+88,(w-4)/2,gtMode()?"gt.export.client":"export.client",b->export(true));
         refresh();RecipePreview.hooks().initialized(this);
     }
     private List<Slot> drawSlots() {
@@ -107,11 +113,11 @@ public final class RecipeEditorScreen extends Screen {
         String path=selected==null?null:selected.label();fields=document.fields();selected=fields.stream().filter(f->f.label().equals(path)).findFirst().orElse(fields.isEmpty()?null:fields.getFirst());
         layout=null;bindings.clear();repeatedBindings.clear();selectedSlot=null;
         try {if(minecraft.level!=null){
-            Recipe<?> recipe=document.decode(minecraft.level.registryAccess());layout=RecipePreview.layout(recipe,RecipePreview.proxy(preferred,document.type())?null:preferred,document).orElse(null);usingSourceLayout=false;
+            Recipe<?> recipe=GtRecipeSupport.freshPreview(document.decode(minecraft.level.registryAccess()));layout=RecipePreview.layout(recipe,RecipePreview.proxy(preferred,document.type())?null:preferred,document).orElse(null);usingSourceLayout=false;
             if(layout==null&&preferred!=null&&sourceDisplay!=null){layout=RecipePreview.sourceLayout(preferred,sourceDisplay).orElse(null);usingSourceLayout=layout!=null;}
             if(layout==null){layout=RecipePreview.fallbackLayout(recipe,preferred,document).orElse(null);usingSourceLayout=false;}
             if(layout==null)status=t("error.layout");else{
-                var r=layout.getRect();int previewTop=panelY()+84,space=Math.max(20,controlsY()+18-previewTop-(usingSourceLayout?20:0));
+                var r=layout.getRect();int previewTop=panelY()+(gtMode()?104:84),space=Math.max(20,controlsY()+18-previewTop-(usingSourceLayout?20:0));
                 previewScale=Math.min(1f,Math.min((panelWidth()-24f)/Math.max(1,r.getWidth()),space/(float)Math.max(1,r.getHeight())));
                 previewX=panelX()+(panelWidth()-Math.round(r.getWidth()*previewScale))/2;previewY=previewTop+(space-Math.round(r.getHeight()*previewScale))/2;layout.setPosition(0,0);buildBindings(recipe);
                 if(usingSourceLayout)overrideSourceSlots();
@@ -269,19 +275,51 @@ public final class RecipeEditorScreen extends Screen {
     private void remove(double x,double y){
         if(selected==null)return;
         if(selected.path().getFirst().equals("$crafting")){reject(t("error.empty_slot"),x,y);return;}
-        if(selected.output()){reject(t("error.output_required"),x,y);return;}
-        boolean removable=selected.path().size()==2&&(selected.path().getFirst().equals("key")||selected.path().getFirst().equals("ingredients"));
+        if(selected.output()&&!gtMode()){reject(t("error.output_required"),x,y);return;}
+        boolean removable=gtMode()&&selected.path().size()==4||selected.path().size()==2&&(selected.path().getFirst().equals("key")||selected.path().getFirst().equals("ingredients"));
         if(!removable){reject(t("error.required"),x,y);return;}
         var old=document.json();
         try{
             var group=new ArrayList<>(repeatedBindings.getOrDefault(selected.label(),List.of(selected)));Collections.reverse(group);
             for(var f:group)document.remove(f);
             try{document.decode(minecraft.level.registryAccess());}catch(RuntimeException ex){document.replace(old);reject(t("error.last_input",ex.getMessage()),x,y);return;}
-            manualBindings.clear();refresh();status=t("changed","JSON");clickReason=null;
+            manualBindings.clear();refresh();status=t("changed",gtMode()?"JS":"JSON");clickReason=null;
         }catch(RuntimeException ex){document.replace(old);reject(t("error.invalid",ex.getMessage()),x,y);}
+    }
+    private boolean gtMode(){return GtRecipeSupport.isDocument(document.json());}
+    private String script(){
+        String id=GtRecipeScript.fullId(recipeId,document.type());
+        if(scriptText!=null)try{var draft=GtRecipeScript.parse(scriptText);if(draft.id().equals(id)&&draft.json().equals(document.json()))return scriptText;}catch(RuntimeException ignored){}
+        return GtRecipeScript.generate(document.json(),id);
+    }
+    private void openDraft(){
+        if(gtMode())minecraft.setScreen(new JsDraftScreen(this,script(),draft->{
+            boolean changed=!document.type().equals(draft.json().get("type").getAsString());document.replace(draft.json());recipeId=draft.id();scriptText=draft.text();selected=null;manualBindings.clear();sourceBindings.clear();
+            if(changed){preferred=null;sourceDisplay=null;sourceDocument=new RecipeDocument(draft.json());}
+        }));
+        else minecraft.setScreen(new JsonDraftScreen(this,document.json(),json->{
+            boolean changed=!document.type().equals(json.get("type").getAsString());document.replace(json);selected=null;manualBindings.clear();sourceBindings.clear();
+            if(changed){preferred=null;sourceDisplay=null;sourceDocument=new RecipeDocument(json);}
+        }));
+    }
+    private void addGtField(boolean output){
+        minecraft.setScreen(new GtContentScreen(this,output,selected!=null&&selected.fluid(),value,amount,addition->{
+            var before=document.json();
+            try{
+                var field=document.addGtContent(output,addition.fluid(),addition.perTick(),addition.value(),addition.amount(),minecraft.level.registryAccess());
+                document.decode(minecraft.level.registryAccess());manualBindings.clear();sourceBindings.clear();selected=field;value=addition.value().isBlank()?(addition.fluid()?"minecraft:water":"minecraft:stone"):addition.value();amount=addition.amount();status=t("changed",field.label());
+            }catch(RuntimeException ex){document.replace(before);throw ex;}
+        }));
     }
     private void export(boolean client){
         try{if(layout==null)throw new IllegalStateException("vjrm.error.layout");var id=ResourceLocation.parse(recipeId);document.decode(minecraft.level.registryAccess());var json=document.json();
+            if(gtMode()){
+                if(!GtRecipeSupport.kubeLoaded())throw new IllegalArgumentException("vjrm.gt.kube_required");
+                String script=script();var draft=GtRecipeScript.parse(script);id=ResourceLocation.parse(draft.id());
+                if(client){var file=ScriptExporter.export(minecraft.gameDirectory.toPath(),id.getNamespace(),id.getPath(),script,overwrite);status=t("exported",file.toString());}
+                else{var envelope=new com.google.gson.JsonObject();envelope.addProperty("vjrm:script",script);if(envelope.toString().length()>24000)throw new IllegalArgumentException("vjrm.error.size");PacketDistributor.sendToServer(new RecipeNetwork.ExportRequest(id.toString(),envelope.toString(),overwrite));status=t("sending");}
+                return;
+            }
             if(client){var root=minecraft.gameDirectory.toPath().resolve("vjrm_exports/vjrm_generated").toAbsolutePath();DatapackExporter.writePackMeta(root);var file=DatapackExporter.export(root,id.getNamespace(),id.getPath(),json,overwrite);status=t("exported",file.toString());}
             else{if(json.toString().length()>24000)throw new IllegalArgumentException("vjrm.error.size");PacketDistributor.sendToServer(new RecipeNetwork.ExportRequest(recipeId,json.toString(),overwrite));status=t("sending");}
         }catch(Exception ex){status=t("error.invalid",ex.getMessage());}

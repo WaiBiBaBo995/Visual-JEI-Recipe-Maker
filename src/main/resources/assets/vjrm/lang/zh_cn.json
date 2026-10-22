@@ -103,5 +103,21 @@
   "vjrm.manual.removed": "已移除手动字段定义。",
   "vjrm.manual.raw_help": "原始 JSON：在编辑器值栏输入有效 JSON，不支持原料拖拽。",
   "vjrm.manual.drag_help": "私有包装格式请选择内部原料或 ID 节点，避免替换整个包装。",
-  "vjrm.error.field_path": "请选择存在的节点；配方 type 请通过「编辑 JSON」修改。"
+  "vjrm.error.field_path": "请选择存在的节点；配方 type 请通过「编辑 JSON」修改。",
+  "vjrm.js": "编辑 JS",
+  "vjrm.js.valid": "KubeJS 配方声明有效",
+  "vjrm.js.help": "Ctrl+S 应用 · Ctrl+Shift+F 格式化 · Ctrl+Z/Y 撤销/重做 · 编辑 merge 中的配方参数",
+  "vjrm.js.structure": "请保留 ServerEvents.recipes 和机器配方的 .merge({...}) 声明结构；在对象内编辑配方参数。",
+  "vjrm.js.type": "机器配方类型或脚本配方 ID 不匹配",
+  "vjrm.gt.kube_required": "导出 GTCEu 脚本需要安装 KubeJS",
+  "vjrm.gt.add_input": "添加输入",
+  "vjrm.gt.add_output": "添加输出",
+  "vjrm.gt.per_tick": "每 tick",
+  "vjrm.gt.once": "每次配方",
+  "vjrm.gt.fields": "JS 字段",
+  "vjrm.gt.manual_title": "从 JS 配方数据添加字段",
+  "vjrm.gt.capacity": "该机器配方类型没有更多对应槽位",
+  "vjrm.gt.export.server": "导出服务端脚本",
+  "vjrm.gt.export.client": "导出客户端脚本",
+  "vjrm.js.copied": "已复制当前 JS 到剪贴板"
 }

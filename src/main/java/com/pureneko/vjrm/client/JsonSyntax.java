@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /** Lossless tokens: highlighting must never insert formatting codes into recipe text. */
 public final class JsonSyntax {
     public enum Kind {
-        KEY(0x9CDCFE),STRING(0xCE9178),NUMBER(0xB5CEA8),LITERAL(0x569CD6),PUNCTUATION(0xD4D4D4),ERROR(0xF48771);
+        COMMENT(0x6A9955),FUNCTION(0xDCDCAA),KEY(0x9CDCFE),STRING(0xCE9178),NUMBER(0xB5CEA8),LITERAL(0x569CD6),PUNCTUATION(0xD4D4D4),ERROR(0xF48771);
         public final int color;Kind(int color){this.color=color;}
     }
     public record Token(int start,int end,Kind kind) { }
@@ -66,9 +66,9 @@ public final class JsonSyntax {
         var stack=new ArrayDeque<Integer>();var out=new HashMap<Integer,Integer>();
         for(var token:tokens)if(token.kind()==Kind.PUNCTUATION){
             int i=token.start();char c=text.charAt(i);
-            if(c=='{'||c=='[')stack.push(i);
-            else if(c=='}'||c==']'){
-                if(!stack.isEmpty()&&text.charAt(stack.peek())==(c=='}'?'{':'[')){int opening=stack.pop();out.put(opening,i);out.put(i,opening);}else stack.clear();
+            if(c=='{'||c=='['||c=='(')stack.push(i);
+            else if(c=='}'||c==']'||c==')'){
+                if(!stack.isEmpty()&&text.charAt(stack.peek())==(c=='}'?'{':c==']'?'[':'(')){int opening=stack.pop();out.put(opening,i);out.put(i,opening);}else stack.clear();
             }
         }
         return Map.copyOf(out);

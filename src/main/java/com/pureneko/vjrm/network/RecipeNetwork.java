@@ -44,7 +44,16 @@ public final class RecipeNetwork {
             long now=System.currentTimeMillis();Long previous=LAST_EXPORT.put(player.getUUID(),now);
             if(previous!=null && now-previous<1000){context.reply(new ExportResult(false,"rate"));return;}
             ResourceLocation id=ResourceLocation.parse(request.id());
-            var document=new RecipeDocument(JsonParser.parseString(request.json()).getAsJsonObject());
+            var submitted=JsonParser.parseString(request.json()).getAsJsonObject();
+            if(submitted.has("vjrm:script")){
+                if(!com.pureneko.vjrm.recipe.GtRecipeSupport.kubeLoaded())throw new IllegalArgumentException("vjrm.gt.kube_required");
+                String script=submitted.get("vjrm:script").getAsString();var draft=com.pureneko.vjrm.recipe.GtRecipeScript.parse(script);
+                if(!draft.id().equals(id.toString())||!com.pureneko.vjrm.recipe.GtRecipeSupport.isDocument(draft.json()))throw new IllegalArgumentException("vjrm.js.type");
+                new RecipeDocument(draft.json()).decode(player.registryAccess());
+                com.pureneko.vjrm.export.ScriptExporter.export(net.neoforged.fml.loading.FMLPaths.GAMEDIR.get(),id.getNamespace(),id.getPath(),script,request.overwrite());
+                context.reply(new ExportResult(true,id.toString()));return;
+            }
+            var document=new RecipeDocument(submitted);
             document.decode(player.registryAccess());
             var root=DatapackExporter.serverDatapackRoot(player.server,"vjrm_generated").toAbsolutePath();
             DatapackExporter.writePackMeta(root);

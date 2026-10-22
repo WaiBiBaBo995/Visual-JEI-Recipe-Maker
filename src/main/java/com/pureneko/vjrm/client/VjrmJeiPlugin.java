@@ -78,11 +78,16 @@ public final class VjrmJeiPlugin implements IModPlugin {
     private static <T> RecipeHolder<?> source(IRecipeLayoutDrawable<T> layout) {
         var mc = Minecraft.getInstance(); if (mc.level == null) return null;
         ResourceLocation id = sourceId(layout.getRecipeCategory(),layout.getRecipe());
-        return id == null ? null : mc.level.getRecipeManager().byKey(id).orElse(null);
+        if(id==null)return null;
+        var found=mc.level.getRecipeManager().byKey(id).orElse(null);
+        if(found!=null)return found;
+        if(com.pureneko.vjrm.recipe.GtRecipeSupport.isRecipe(layout.getRecipe()))return new RecipeHolder<>(id,(Recipe<?>)layout.getRecipe());
+        return null;
     }
     @SuppressWarnings({"rawtypes","unchecked"})
     public static ResourceLocation sourceId(IRecipeCategory category,Object display){
-        var id=RecipeIdentities.id(display);if(id!=null)return id;
+        var id=com.pureneko.vjrm.recipe.GtRecipeSupport.id(display);if(id!=null)return id;
+        id=RecipeIdentities.id(display);if(id!=null)return id;
         try{return category.getRegistryName(display);}catch(RuntimeException ex){return null;}
     }
     @SuppressWarnings({"rawtypes","unchecked"})
@@ -119,6 +124,7 @@ public final class VjrmJeiPlugin implements IModPlugin {
         var categories = new ArrayList<mezz.jei.api.recipe.category.IRecipeCategory<?>>();
         if (preferred != null) categories.add(preferred);
         else categories.addAll(runtime.getRecipeManager().createRecipeCategoryLookup().get().toList());
+        categories.sort(java.util.Comparator.comparingInt(c->categoryMatches(c,recipe,c==preferred)?0:1));
         var holder = new RecipeHolder<>(ResourceLocation.fromNamespaceAndPath("vjrm", "preview"), recipe);
         for (var c : categories) {
             mezz.jei.api.recipe.category.IRecipeCategory category = c;

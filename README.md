@@ -1,4 +1,20 @@
-# Visual JEI Recipe Maker 1.0.1 -English-
+# Visual JEI Recipe Maker 1.0.2 -English-
+
+## New in 1.0.2
+
+JSON and supported GTCEu JS pages display native browser icons after recognized item/fluid IDs, including manually added fields. Recipe type search also shows category icons. Icons belong to the display layer: copying, formatting, and exports keep the original text unchanged. Wrapping, selection, mouse positioning, and cursor movement account for icon space; invalid drafts clear stale icons. Fluid samples fill their icons, and 26.1.2 separates ingredient/text rendering layers for correct highlighting and clipping.
+
+All editions use the exact mod metadata version `1.0.2`. The inventory label retains its local-language name without the parenthetical explanation. The 26.1.2 editions support JEI only. See [CHANGELOG.md](CHANGELOG.md) for full history and [COMPATIBILITY.md](COMPATIBILITY.md) for platform-specific integrations.
+
+## GTCEu / KubeJS
+
+Available on **Forge 1.20.1 and NeoForge 1.21.1**. Install the matching GTCEu, KubeJS, and their dependencies separately; they are not bundled. Newer KubeJS versions can require a newer loader than VJRM itself. The supplied NeoForge integration environment used NeoForge 21.1.199.
+
+Copy a machine recipe from JEI/EMI or choose its template in **Recipe Type**. Runtime GT recipes need no datapack JSON. GT pages provide **Edit JS**, **JS Fields**, **Add Input**, **Add Output**, and client/server script export. Add items/fluids with counts and per-recipe or per-tick channels, subject to machine slot limits; right-click removes bound entries. **Values** edits duration in ticks, EU/t in `tickInputs`, chance, and other existing fields. Replacing materials retains surrounding chance/condition data.
+
+The generated declaration uses `ServerEvents.recipes(event => { event.recipes["gtceu"]["machine_type"]("namespace:name").merge({...}); });`, preserving complete recipe data. Visual round-tripping accepts comments and edits to the generated ID/type/object but does not execute JS. Keep the declaration structure; add arbitrary functions/loops in an external editor after export. The JS editor supports highlighting, line numbers, completion, indentation, undo/redo, formatting, selection/clipboard operations, errors, Ctrl+S to apply, and Ctrl+Shift+F to format.
+
+Scripts are written relative to the client/server installation root at `kubejs/server_scripts/vjrm/<namespace>/<recipe-path>.js`. For example, `vjrm:chemical_reactor/test` maps to `kubejs/server_scripts/vjrm/vjrm/chemical_reactor/test.js`. Machine-type ID prefixes are normalized to avoid duplication. Server exports still check permissions, frequency, decoding, path scope, and explicit overwriting. Restart or reload KubeJS recipes to apply exported scripts. Ordinary recipes retain JSON/datapack export. See [COMPATIBILITY.md](COMPATIBILITY.md).
 
 Minecraft 1.21.1, NeoForge 21.1.65+, Java 21. Mod ID: `vjrm`, package: `com.pureneko.vjrm`. On the client, install either JEI 19.27+ or EMI 1.1.24+; when both are installed, the editor uses EMI. The basic validation combination for this version: NeoForge 21.1.65 + JEI 19.27.0.350 / EMI 1.1.24+1.21.1.
 
@@ -123,9 +139,22 @@ Each branch is an independent project. Install the JAR matching both Minecraft a
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-Version **1.0.1** includes the updated editor and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.1`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
+Version **1.0.2** includes native item/fluid text icons, recipe category icons, the updated editor, and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.2`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
 
-# Visual JEI Recipe Maker 1.0.1 -中文-
+
+# Visual JEI Recipe Maker 1.0.2 -中文-
+
+## 1.0.2 更新
+
+JSON 与适用版本的 GTCEu JS 编辑页在已识别的物品/流体 ID 后显示原生图标，手动字段也参与识别；配方类型检索显示类别图标。图标只属于显示层，不改变草稿、复制、格式化或导出的文字。换行、鼠标定位、选择与光标移动按图标占位计算，无效草稿会清理过期图标。流体图标使用满幅示例；26.1.2 分离材料与文字渲染层，保留高亮和裁切。
+
+模组元数据统一为精确版本 `1.0.2`，玩家物品栏标题保留各语言名称并删除括号说明。26.1.2 仅支持 JEI。完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+
+## GTCEu / KubeJS
+
+**1.20.1 Forge 与 1.21.1 NeoForge** 支持 GTCEu 机器配方、JS 编辑、输入/输出及每 tick 材料操作。运行时配方不要求数据包 JSON。需另装对应版本的 GTCEu、KubeJS 及其前置；新 KubeJS 自身可能要求更高加载器版本。
+
+GT 页使用「编辑 JS」「JS 字段」「添加输入」「添加输出」及两个脚本导出按钮。生成的 `merge` 声明保留完整配方数据，编辑回填仅解析声明，不执行 JS。脚本写入客户端或服务端安装根目录的 `kubejs/server_scripts/vjrm/<命名空间>/<配方路径>.js`；重启或重载 KubeJS 配方后生效。普通配方仍使用 JSON 和数据包导出。安装、操作、路径及权限细节见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
 Minecraft 1.21.1，NeoForge 21.1.65+，Java 21。Mod ID：`vjrm`，包：`com.pureneko.vjrm`。客户端安装 JEI 19.27+ 或 EMI 1.1.24+ 任意一个即可；两者都装时编辑器使用 EMI。本版基础验证组合：NeoForge 21.1.65 + JEI 19.27.0.350 / EMI 1.1.24+1.21.1。
 
@@ -139,7 +168,7 @@ Minecraft 1.21.1，NeoForge 21.1.65+，Java 21。Mod ID：`vjrm`，包：`com.pu
 6. 右键清除可移除的工作台输入；空工作台槽位可重新拖入原料。必需字段和最后一个输入受到 serializer 校验保护。按 Esc 返回。
 7. 无法自动对应 JSON 字段的槽位会显示黄色边框。先点击槽位，选择字段，再按「绑定槽位」。没有对应选项时，点击「JSON字段」从当前配方 JSON 添加字段；先选槽位再添加可直接绑定。燃料、催化剂和纯展示槽本身不属于可导出的原料。
 8. 点击顶部「数值」，搜索并修改已有数值字段，包括运行时间、魔力、能量、经验、概率、数量和嵌套参数。支持大整数、小数、科学计数法；常见能量等数字字符串保留字符串类型。整个草稿一起校验，取消则丢弃修改。
-9. 「编辑 JSON」内的「复制到剪贴板」原样复制当前草稿。编辑器提供键名、字符串、数值、布尔值/null 和错误高亮，行号、行列位置、配对括号高亮、括号/引号补全、回车自动缩进、Tab 缩进、Ctrl+Z/Y 撤销重做、格式化及实时语法错误提示。Ctrl+Shift+F 格式化，Ctrl+S 应用；支持 Ctrl+A/C/V/X。应用前调用实际 serializer 校验。
+9. 「编辑 JSON」内的「复制到剪贴板」原样复制当前草稿。已识别的物品/流体 ID 字符串后显示 JEI/EMI 原生图标；手动字段同样参与识别，图标不写入文本。编辑器提供键名、字符串、数值、布尔值/null 和错误高亮，行号、行列位置、配对括号高亮、括号/引号补全、回车自动缩进、Tab 缩进、Ctrl+Z/Y 撤销重做、格式化及实时语法错误提示。Ctrl+Shift+F 格式化，Ctrl+S 应用；支持 Ctrl+A/C/V/X。应用前调用实际 serializer 校验。
 10. 输入新配方 ID，例如 `vjrm:my_recipe`，选择客户端或服务端导出。默认拒绝覆盖，可显式打开覆盖。
 
 界面会自动缩放，按整个屏幕水平、垂直居中，保留玩家物品栏，侧栏在编辑器两侧显示。JEI 侧栏自身需要启用，可用 Ctrl+O 切换。
@@ -148,7 +177,7 @@ Minecraft 1.21.1，NeoForge 21.1.65+，Java 21。Mod ID：`vjrm`，包：`com.pu
 
 ## 来源信息与槽位提示
 
-配方来源显示 ID 和类别名称；代理配方显示真实来源及展示类别。悬停来源行可查看完整信息。配方类型检索也支持名称和 ID。
+配方来源显示 ID 和类别名称；代理配方显示真实来源及展示类别。悬停来源行可查看完整信息。配方类型检索也支持名称和 ID，并显示浏览器中该类别的图标。
 
 将鼠标移到配方槽位上，会显示原料名称、注册 ID、所属模组及浏览器原有文字说明。已绑定槽位追加 JSON 字段路径；没有绑定的展示槽也可查看原料身份。字段选择与绑定按钮位于配方图上方，配方图在展示区域内居中。
 
@@ -242,6 +271,7 @@ Astral Sorcery 额外客户端检查（仅用于开发验证，不打包第三�
 
 截图包括真实祭坛、EMI 复制按钮及手动 Lumen 节点选择与修改。。
 
+
 ## 版本与分支
 
 每个分支都是独立工程。请安装同时匹配 Minecraft 版本与加载器的 JAR。
@@ -255,4 +285,4 @@ Astral Sorcery 额外客户端检查（仅用于开发验证，不打包第三�
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-当前版本 **1.0.1** 包含新版编辑器及金色绑定字段提示。玩家物品栏标题已移除括号说明；模组元数据中的版本为精确的 `1.0.1`，JAR 文件名可附带游戏版本和加载器标识。历史更新见 [CHANGELOG.md](CHANGELOG.md)。
+各分支均为独立可构建工程，安装时匹配游戏版本与加载器。
