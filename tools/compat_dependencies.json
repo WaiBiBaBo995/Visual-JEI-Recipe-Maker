@@ -1,0 +1,67 @@
+[
+  {
+    "name": "gt20.jar",
+    "url": "https://github.com/GregTechCEu/GregTech-Modern/releases/download/v7.5.3-1.20.1/gtceu-1.20.1-7.5.3.jar",
+    "sha256": "d6560d8b695828a763389d3f45e0210ef70c1892c7b1633ac458544905df1a0d"
+  },
+  {
+    "name": "gt21.jar",
+    "url": "https://github.com/GregTechCEu/GregTech-Modern/releases/download/v7.0.2-1.21.1/gtceu-1.21.1-7.0.2.jar",
+    "sha256": "c09a550523e931342a575193cbaad2e4b643e5de2cefe280cd1de540022c6388"
+  },
+  {
+    "name": "gt21-snapshot.jar",
+    "url": "https://github.com/GregTechCEu/GregTech-Modern/releases/download/latest-1.21/gtceu-1.21.1-8.0.0-SNAPSHOT%2B20261017-095459-36a6b38.jar",
+    "sha256": "057f8e9750b750bf020340a3d8ecdde0fe183c7a3a1ac1afae29777e031a1011"
+  },
+  {
+    "name": "20-kubejs.jar",
+    "url": "https://cdn.modrinth.com/data/umyGl7zF/versions/hVR2xUSr/kubejs-forge-2001.6.5-build.26.jar",
+    "sha256": "1769312192fbf9d72f45054ba61130523bfb471b5f480a4bff8c210ec09400bb"
+  },
+  {
+    "name": "20-rhino.jar",
+    "url": "https://cdn.modrinth.com/data/sk9knFPE/versions/uNALdylI/rhino-forge-2001.2.3-build.10.jar",
+    "sha256": "fed2211429301bf043864183cab9ab8e92d4cc4dbb9e488ce6c75217c54584a6"
+  },
+  {
+    "name": "20-architectury-api.jar",
+    "url": "https://cdn.modrinth.com/data/lhGA9TYQ/versions/1MKTLiiG/architectury-9.2.14-forge.jar",
+    "sha256": "218b471d0b8a1f6cda14cfc1beb9eeb0df54304500acc6c5613d9b88ec65d9af"
+  },
+  {
+    "name": "21-kubejs.jar",
+    "url": "https://cdn.modrinth.com/data/umyGl7zF/versions/3w2ufpfQ/kubejs-neoforge-2101.7.1-build.181.jar",
+    "sha256": "7e1e11686383c5f1d9b869ff48a485873506e4f2d7833de73d236ba0b572baed"
+  },
+  {
+    "name": "21-kubejs-current.jar",
+    "url": "https://cdn.modrinth.com/data/umyGl7zF/versions/THIGFPwf/kubejs-neoforge-2101.7.2-build.377.jar",
+    "sha256": "df9a8458b1f83fed06ba54684977911795a5153a462b81a610895f5b1f2f0cbf"
+  },
+  {
+    "name": "21-rhino.jar",
+    "url": "https://cdn.modrinth.com/data/sk9knFPE/versions/SqkDvOLG/rhino-2101.2.8-build.91.jar",
+    "sha256": "1d53d962aa4dac54bcbb4f998c1845980cf194318f1d6b1580ea6ac15cce5ef3"
+  },
+  {
+    "name": "thaum26.jar",
+    "url": "https://www.cursemaven.com/curse/maven/thaumaturge-1628024/9095192/thaumaturge-1628024-9095192.jar",
+    "sha256": "74a7ce4995bdf59a23d1a5f70115eca868f1545fde0aa231e7e2a1c1c0989daa"
+  },
+  {
+    "name": "26-curios.jar",
+    "url": "https://cdn.modrinth.com/data/vvuO3ImH/versions/dRnRThvD/curios-neoforge-15.0.0%2B26.1.2.jar",
+    "sha256": "ea1e92cd9dbfb93d2d363e2aced406a1749a4ed3e47bf06cce463903a99fd267"
+  },
+  {
+    "name": "21-configuration.jar",
+    "url": "https://cdn.modrinth.com/data/3WjjSM5O/versions/6Mztfq1u/configuration-neoforge-1.21.1-3.1.1.jar",
+    "sha256": "b903cc326e10af63226c7a45571bda1e0cf88b978c9920275806e852bcd92bc1"
+  },
+  {
+    "name": "26-lithostitched.jar",
+    "url": "https://cdn.modrinth.com/data/XaDC71GB/versions/pLlJIqyp/lithostitched-1.8.1-neoforge-26.1.jar",
+    "sha256": "bbe669da8671b2da36d3b89fbc113d28c7d92f3fe5b6709d0e6875e5f867d05d"
+  }
+]

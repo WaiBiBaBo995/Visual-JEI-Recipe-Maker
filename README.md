@@ -1,6 +1,12 @@
-# Visual JEI Recipe Maker 1.0.1 -English-
+# Visual JEI Recipe Maker 1.0.2 -English-
 
-This independent branch contains **Minecraft 26.1.2 Fabric**, version **1.0.1**. Use the matching row below for installation. Other editions are maintained on separate branches.
+## New in 1.0.2
+
+JSON and supported GTCEu JS pages display native browser icons after recognized item/fluid IDs, including manually added fields. Recipe type search also shows category icons. Icons belong to the display layer: copying, formatting, and exports keep the original text unchanged. Wrapping, selection, mouse positioning, and cursor movement account for icon space; invalid drafts clear stale icons. Fluid samples fill their icons, and 26.1.2 separates ingredient/text rendering layers for correct highlighting and clipping.
+
+All editions use the exact mod metadata version `1.0.2`. The inventory label retains its local-language name without the parenthetical explanation. The 26.1.2 editions support JEI only. See [CHANGELOG.md](CHANGELOG.md) for full history and [COMPATIBILITY.md](COMPATIBILITY.md) for platform-specific integrations.
+
+This independent branch contains **Minecraft 26.1.2 Fabric**, version **1.0.2**. Use the matching row below for installation. Other editions are maintained on separate branches.
 
 ## Installation
 
@@ -67,11 +73,18 @@ Each branch is an independent project. Install the JAR matching both Minecraft a
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-Version **1.0.1** includes the updated editor and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.1`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
+Version **1.0.2** includes native item/fluid text icons, recipe category icons, the updated editor, and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.2`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
 
-# Visual JEI Recipe Maker 1.0.1 -中文-
 
-此独立分支包含 **Minecraft 26.1.2 Fabric 1.0.1**。安装时使用下表中对应游戏版本的组合；其他版本位于各自分支。
+# Visual JEI Recipe Maker 1.0.2 -中文-
+
+## 1.0.2 更新
+
+JSON 与适用版本的 GTCEu JS 编辑页在已识别的物品/流体 ID 后显示原生图标，手动字段也参与识别；配方类型检索显示类别图标。图标只属于显示层，不改变草稿、复制、格式化或导出的文字。换行、鼠标定位、选择与光标移动按图标占位计算，无效草稿会清理过期图标。流体图标使用满幅示例；26.1.2 分离材料与文字渲染层，保留高亮和裁切。
+
+模组元数据统一为精确版本 `1.0.2`，玩家物品栏标题保留各语言名称并删除括号说明。26.1.2 仅支持 JEI。完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+
+此独立分支包含 **Minecraft 26.1.2 Fabric 1.0.2**，其他版本位于各自分支。
 
 ## 安装组合
 
@@ -127,7 +140,8 @@ Fabric 配置使用 JSON：`config/vjrm-client.json` 的 `showJeiCopyButton`、`
 
 验证使用工程 `run/` 下的独立世界；先运行服务端检查，再运行客户端。测试类与测试配方属于独立测试模组，发布 JAR 不包含这些内容和第三方浏览器代码。
 
-更新记录统一在 [CHANGELOG.md](CHANGELOG.md)，实际。JEI 26.1 源码参考：[官方分支](https://github.com/mezz/JustEnoughItems/tree/26.1)。
+更新记录统一在 [CHANGELOG.md](CHANGELOG.md)。JEI 26.1 源码参考：[官方分支](https://github.com/mezz/JustEnoughItems/tree/26.1)。
+
 
 ## 版本与分支
 
@@ -142,4 +156,4 @@ Fabric 配置使用 JSON：`config/vjrm-client.json` 的 `showJeiCopyButton`、`
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-当前版本 **1.0.1** 包含新版编辑器及金色绑定字段提示。玩家物品栏标题已移除括号说明；模组元数据中的版本为精确的 `1.0.1`，JAR 文件名可附带游戏版本和加载器标识。历史更新见 [CHANGELOG.md](CHANGELOG.md)。
+各分支均为独立可构建工程，安装时匹配游戏版本与加载器。

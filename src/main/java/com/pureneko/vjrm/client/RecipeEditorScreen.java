@@ -26,6 +26,7 @@ public final class RecipeEditorScreen extends VjrmScreen {
     public record DropTarget(Rect2i area, Field field) { }
     private final Screen parent;
     private RecipeDocument document;
+    java.util.List<RecipeDocument.Field> annotationFields(){return document.manualFields();}
     private Category preferred;
     private Layout layout;
     private Object sourceDisplay;
