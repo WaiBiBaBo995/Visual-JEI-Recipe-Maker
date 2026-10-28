@@ -275,5 +275,5 @@ JSON 辅助及手动字段。EMI 检查会在关闭装饰器后操作真实配�
 [提交问题](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/issues)时，请提供 Minecraft、
 加载器、VJRM 与浏览器版本、相关模组和配方 ID、复现步骤及日志。字段映射问题尽可能附上原始 JSON。
 
-VJRM 的模组元数据声明采用 **MIT** 许可。原始配方读取参考了 JEI Swift Copy 的思路；
+VJRM 采用 [MIT 许可](LICENSE)。原始配方读取参考了 JEI Swift Copy 的思路；
 配方布局和材料渲染使用相应的 JEI/EMI 与模组联动。

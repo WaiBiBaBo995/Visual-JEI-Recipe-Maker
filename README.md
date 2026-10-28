@@ -306,5 +306,5 @@ append `--init-script tools/local-launch-config.gradle`. Use `--offline` only wi
 loader, VJRM, and browser versions, the affected mod and recipe ID, reproduction steps, and relevant logs.
 For field-mapping problems, include the source JSON when possible.
 
-VJRM's mod metadata declares **MIT**. Resource-reading behavior was informed by JEI Swift Copy;
+VJRM is licensed under the [MIT License](LICENSE). Resource-reading behavior was informed by JEI Swift Copy;
 recipe layouts and ingredient rendering use the corresponding JEI/EMI and mod integrations.
