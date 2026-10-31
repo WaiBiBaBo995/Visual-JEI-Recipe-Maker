@@ -97,10 +97,10 @@
   "vjrm.manual.output": "用途：输出",
   "vjrm.manual.add": "添加／更新",
   "vjrm.manual.remove": "移除手动字段",
-  "vjrm.manual.help": "选择节点或输入 JSON Pointer 路径；数组下标从 0 开始。",
+  "vjrm.manual.help": "选择节点或输入 JSON Pointer 路径，数组下标从 0 开始。字段和绑定会自动保存在当前客户端。",
   "vjrm.manual.hint": "请选择存在的节点；配方 type 请通过「编辑 JSON」修改。",
   "vjrm.manual.selected": "已选择：%s",
-  "vjrm.manual.added": "已向当前草稿添加 JSON 字段 %s。",
+  "vjrm.manual.added": "已为此配方类型保存 JSON 字段 %s。",
   "vjrm.manual.removed": "已移除手动字段定义。",
   "vjrm.manual.raw_help": "原始 JSON：在编辑器值栏输入有效 JSON，不支持原料拖拽。",
   "vjrm.manual.drag_help": "私有包装格式请选择内部原料或 ID 节点，避免替换整个包装。",
@@ -120,5 +120,9 @@
   "vjrm.gt.capacity": "该机器配方类型没有更多对应槽位",
   "vjrm.gt.export.server": "导出服务端脚本",
   "vjrm.gt.export.client": "导出客户端脚本",
-  "vjrm.js.copied": "已复制当前 JS 到剪贴板"
+  "vjrm.js.copied": "已复制当前 JS 到剪贴板",
+  "vjrm.profiles.reset": "重置此类型",
+  "vjrm.profiles.reset_help": "清除此配方类型保存的手动字段和槽位绑定，保留配方 JSON。",
+  "vjrm.profiles.reset_done": "已重置此配方类型保存的字段和槽位绑定。",
+  "vjrm.profiles.error": "无法读取或保存字段配置，请检查 config/vjrm/field_profiles.json。"
 }

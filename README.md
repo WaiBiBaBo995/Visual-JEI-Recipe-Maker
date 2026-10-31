@@ -50,7 +50,12 @@ When automatic detection misses a field, select a slot and click **JSON Fields**
 
 Item, fluid, and optional chemical fields support dragging and ID/tag operations. Use **Raw JSON** for private structures and enter valid JSON in the value box. Changes use the actual serializer and roll back on failure. Array indices start at zero; escape `/` as `~1` and `~` as `~0` in keys.
 
-Manual definitions belong to the draft, survive resizing and same-type JSON edits, and reset on template/type changes. They are not exported; removing a definition does not delete JSON data. Astral Sorcery runtime checks in the supplied source apply to its NeoForge 1.21.1 edition.
+Manual fields and slot bindings save automatically to `config/vjrm/field_profiles.json` in the
+client instance and restore across restarts, worlds, and servers. Fields match the recipe type;
+bindings also match the viewer, category, and ordered slot layout. Missing paths or incompatible
+layouts are skipped without erasing saved settings. **Reset Type** in **JSON Fields** clears the
+current type's saved metadata. Removing/resetting definitions leaves recipe JSON unchanged;
+these settings are not included in exports. Astral Sorcery runtime checks in the supplied source apply to its NeoForge 1.21.1 edition.
 
 ## EMI and JEMI
 
@@ -152,7 +157,9 @@ GT 页使用「编辑 JS」「JS 字段」「添加输入」「添加输出」�
 
 物品、流体和可选 Mekanism 化学品可使用原有拖拽和 ID/标签操作。任意私有结构可选「原始 JSON」，在编辑器值栏输入有效 JSON，再按「应用修改」；失败时回滚。数组下标从 0 开始，键名中的 `/` 和 `~` 分别写作 `~1`、`~0`。
 
-手动定义属于当前草稿，缩放和同类型 JSON 编辑后保留；更换模板或配方类型后重置，不写入导出的配方。「移除手动字段」只移除定义，不删除 JSON 数据。更多示例见 [主工程说明](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/blob/main/README.md)。Astral Sorcery 本体的运行验证针对官方 1.21.1 NeoForge 版本。
+手动字段和槽位绑定会自动保存到客户端实例的 `config/vjrm/field_profiles.json`，重启后、跨存档和服务器均可复用。
+字段按配方类型恢复；槽位绑定还会核对 JEI／EMI、类别及槽位布局。当前配方缺少的路径或不匹配的布局会跳过，保留配置供其他配方使用。
+在「JSON字段」中点击「重置此类型」可清除此类型保存的字段和绑定。移除或重置定义不会修改配方 JSON，也不会将这些配置写入导出配方。更多示例见 [主工程说明](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/blob/main/README.md)。Astral Sorcery 本体的运行验证针对官方 1.21.1 NeoForge 版本。
 
 ## EMI 与 JEMI
 
