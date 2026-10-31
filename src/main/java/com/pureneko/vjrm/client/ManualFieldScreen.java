@@ -14,6 +14,7 @@ final class ManualFieldScreen extends Screen {
     private final Screen parent;
     private final RecipeDocument document;
     private final Consumer<Field> add;
+    private final Runnable reset;
     private final Consumer<List<String>> remove;
     private final List<JsonFieldPaths.Node> nodes;
     private final List<Button> rows=new ArrayList<>();
@@ -25,8 +26,8 @@ final class ManualFieldScreen extends Screen {
     private boolean output;
     private int scroll;
     private Component status=Component.empty();
-    ManualFieldScreen(Screen parent,RecipeDocument document,Field initial,Consumer<Field> add,Consumer<List<String>> remove){
-        super(com.pureneko.vjrm.recipe.GtRecipeSupport.isDocument(document.json())?Component.translatable("vjrm.gt.manual_title"):t("title"));this.parent=parent;this.document=document;this.add=add;this.remove=remove;nodes=JsonFieldPaths.nodes(document.json());
+    ManualFieldScreen(Screen parent,RecipeDocument document,Field initial,Consumer<Field> add,Consumer<List<String>> remove,Runnable reset){
+        super(com.pureneko.vjrm.recipe.GtRecipeSupport.isDocument(document.json())?Component.translatable("vjrm.gt.manual_title"):t("title"));this.parent=parent;this.document=document;this.add=add;this.remove=remove;this.reset=reset;nodes=JsonFieldPaths.nodes(document.json());
         if(net.neoforged.fml.ModList.get().isLoaded("mekanism"))kinds.addAll(ChemicalSupport.unified()?List.of("chemical"):List.of("gas","infuse_type","pigment","slurry"));
         if(initial!=null){path="/"+initial.label();kind=initial.raw()?"json":!initial.chemical().isEmpty()?initial.chemical():initial.fluid()?"fluid":"item";output=initial.output();}
     }
@@ -46,12 +47,16 @@ final class ManualFieldScreen extends Screen {
         pathBox.setResponder(text->{path=text;update();});
         kindButton=addRenderableWidget(Button.builder(Component.empty(),b->{kind=kinds.get((kinds.indexOf(kind)+1)%kinds.size());update();}).bounds(x,height-86,(w-4)/2,20).build());
         roleButton=addRenderableWidget(Button.builder(Component.empty(),b->{output=!output;update();}).bounds(x+(w-4)/2+4,height-86,w-(w-4)/2-4,20).build());
-        int bw=(w-8)/3;
+        int bw=(w-12)/4;
         addButton=addRenderableWidget(Button.builder(t("add"),b->{
             try{add.accept(field());minecraft.setScreen(parent);}catch(RuntimeException ex){status=Component.translatable("vjrm.error.invalid",Component.translatable(String.valueOf(ex.getMessage())));}
         }).bounds(x,height-30,bw,20).build());
-        removeButton=addRenderableWidget(Button.builder(t("remove"),b->{remove.accept(JsonFieldPaths.parse(path));minecraft.setScreen(parent);}).bounds(x+bw+4,height-30,bw,20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.cancel"),b->onClose()).bounds(x+2*(bw+4),height-30,w-2*(bw+4),20).build());
+        removeButton=addRenderableWidget(Button.builder(t("remove"),b->{try{remove.accept(JsonFieldPaths.parse(path));minecraft.setScreen(parent);}catch(RuntimeException ex){status=Component.translatable("vjrm.profiles.error");}}).bounds(x+bw+4,height-30,bw,20).build());
+        var resetButton=addRenderableWidget(Button.builder(Component.translatable("vjrm.profiles.reset"),b->{
+            try{reset.run();minecraft.setScreen(parent);}catch(RuntimeException ex){status=Component.translatable("vjrm.profiles.error");}
+        }).bounds(x+2*(bw+4),height-30,bw,20).build());
+        resetButton.setTooltip(Tooltip.create(Component.translatable("vjrm.profiles.reset_help")));
+        addRenderableWidget(Button.builder(Component.translatable("gui.cancel"),b->onClose()).bounds(x+3*(bw+4),height-30,w-3*(bw+4),20).build());
         filter();update();setInitialFocus(search);
     }
     private Field field(){

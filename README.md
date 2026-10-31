@@ -133,9 +133,12 @@ completion, automatic indentation, undo/redo, formatting, and clipboard actions.
 4. For **Raw JSON**, enter valid JSON in the value box and apply. Quote strings; objects and arrays
    can be edited as a whole. Changes still use the recipe's serializer and roll back on failure.
 
-Removing a manual field deletes its definition, not recipe data. Valid definitions survive refreshes,
-resizing, and same-type JSON edits; changing the template or recipe type resets them.
-Definitions are not included in exports.
+Manual field definitions and slot bindings save automatically to `config/vjrm/field_profiles.json`
+in the client instance and restore when a matching recipe is opened, including after restarts and
+across worlds/servers. Fields are shared by recipe type; bindings also match the viewer, category,
+and slot layout. Missing paths or changed layouts are skipped without erasing saved settings.
+**Reset Type** in the JSON Fields screen clears this type's saved fields and bindings.
+Removing or resetting definitions leaves recipe JSON unchanged. Definitions are not included in exports.
 
 ## Exporting and applying recipes
 
