@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.nio.file.*;
 import java.util.*;
 
-/** Opt-in checks against live 26.1.2 registries and the complete vanilla recipe set. */
+/** Opt-in checks against live 1.21.1 registries and the complete vanilla recipe set. */
 public final class PortServerChecks {
     public static void check(boolean value,String reason){if(!value)throw new AssertionError(reason);}
     public static void run(net.minecraft.server.MinecraftServer server)throws Exception{
@@ -16,6 +16,7 @@ public final class PortServerChecks {
         var registries=server.registryAccess();
         Path output=Path.of("../../build/verification/server");Files.createDirectories(output);
         try{
+            int predicateChecks=ItemPredicateChecks.run(registries);
             for(String type:RecipeDocument.TYPES){
                 var doc=RecipeDocument.template(type);doc.decode(registries);
                 check(doc.fields().stream().anyMatch(f->!f.output()),"No input fields: "+type);
@@ -87,7 +88,7 @@ public final class PortServerChecks {
                 check(response.equals(com.pureneko.vjrm.network.VjrmNetworking.decode(buffer)),"Source wire format failed");
             }finally{buffer.release();}
             var catalog=RecipeSource.catalog(server);check(catalog.stream().allMatch(s->ResourceLocation.tryParse(s.id())!=null),"Catalog has ResourceKey text instead of ID");
-            Files.writeString(output.resolve("result.txt"),"PASS: 8 templates; items/tags/alternatives; edit, add, remove; numeric rollback; "+total+" source recipes ("+withInputs+" with inputs); export/redecode and pack format 48; catalog; traversal rejection\n");
+            Files.writeString(output.resolve("result.txt"),"PASS: "+predicateChecks+" item/tag predicate checks; 8 templates; items/tags/alternatives; edit, add, remove; numeric rollback; "+total+" source recipes ("+withInputs+" with inputs); export/redecode and pack format 48; catalog; traversal rejection\n");
             System.out.println("PASS VJRM 1.21.1 SERVER CHECKS: "+total+" recipes");
         }catch(Throwable ex){
             ex.printStackTrace();Files.writeString(output.resolve("result.txt"),"FAIL: "+ex);

@@ -1,5 +1,13 @@
 # Changelog -English-
 
+## 1.0.3 — 2026-10-31
+
+- Update all six Minecraft/loader editions to 1.0.3, including loader metadata and CI artifact names. Prefer JEI's official Maven repository before the community mirror without changing dependency versions.
+- Distinguish an output slot's role from its JSON representation. Item/tag output predicates can switch between tags and item IDs without being rewritten as ItemStack JSON. This fixes Immersive Engineering 1.21.1 arc furnace fields such as `results/0/basePredicate`, which previously rejected tags or failed decoding after an item replacement.
+- Read and update the enclosing `count` when a binding targets the predicate inside a sized ingredient/output. Keep counts out of the predicate, retain surrounding recipe conditions and machine parameters, and resolve output tag candidates for preview and slot matching.
+- Adapt the fix to each edition's native ingredient format, including compact strings and `#tags` on 26.1.2. Ordinary stack outputs retain their version-specific format and tag restrictions; this update does not add third-party mods to unsupported platforms.
+- Update tag error messages in English, Simplified Chinese, and Traditional Chinese, document the behavior, and add regression coverage for tag/item switching, enclosing quantities, output previews, and ordinary stack outputs.
+
 ## 1.0.2 — 2026-10-22
 
 - Update all six editions to 1.0.2. JSON and supported GTCEu JS editors show native browser icons after recognized item/fluid ID strings, including manually defined fields. Recipe IDs, type IDs, and unrelated text do not receive icons merely because they resemble registry IDs.
@@ -123,9 +131,17 @@ Original 0.5.0 limits: EMI used a generic JSON-based preview; JEI used native ca
 
 Historical installation: replace old VJRM with the matching 0.5.0 JAR and install JEI or EMI. Source packages included code, Gradle Wrapper, fixtures, and README, excluding worlds, build caches, and third-party JARs.
 
-Historical test results describe the corresponding releases; they are not new runtime verification of 1.0.2.
+Historical test results describe the corresponding releases; they are not new runtime verification of 1.0.3.
 
 # 更新记录 -中文-
+
+## 1.0.3 — 2026-10-31
+
+- 六个 Minecraft／加载器工程统一更新为 1.0.3，同步加载器元数据与 CI 产物名称；构建优先从 JEI 官方 Maven 仓库解析依赖，保持依赖版本不变。
+- 区分槽位的输出用途与字段的 JSON 表示。物品／标签输出谓词可以在标签和物品 ID 之间切换，不再被改写为物品堆栈格式；修复沉浸工程 1.21.1 电弧炉 `results/0/basePredicate` 绑定后标签被拒绝、替换物品导致解码失败的问题。
+- 绑定到带数量材料／产物的内部谓词时，读取并修改外层 `count`，不把数量写入谓词；保留配方条件和机器参数，并为输出标签解析预览候选与槽位匹配。
+- 按各工程原生材料格式移植，包含 26.1.2 的字符串与 `#标签`；普通堆栈输出保留各游戏版本的格式和标签限制，不因此扩展第三方模组的平台兼容范围。
+- 更新英文、简体中文、繁体中文标签错误提示及使用说明；补充标签／物品切换、外层数量、输出预览和普通堆栈输出的回归检查。
 
 ## 1.0.2 — 2026-10-22
 

@@ -30,7 +30,7 @@
   "vjrm.error.copy": "Cannot copy recipe: %s",
   "vjrm.error.layout": "No recipe preview. Install and enable JEI or EMI.",
   "vjrm.error.ingredient": "Ingredient type does not match the slot.",
-  "vjrm.error.tag": "Use a valid tag ID on an input field.",
+  "vjrm.error.tag": "Use a valid tag ID on a field that supports tags.",
   "vjrm.error.amount": "Count/amount must be positive.",
   "vjrm.error.required": "Required fields cannot be removed; edit JSON instead.",
   "vjrm.error.size": "Recipe exceeds the server export packet limit; export to the client instead.",
