@@ -20,11 +20,13 @@ public final class RecipeDocument {
     public static final List<String> TYPES = List.of("crafting_shaped", "crafting_shapeless", "smelting", "blasting", "smoking", "campfire_cooking", "stonecutting", "smithing_transform");
     private JsonObject json;
     private final Map<List<String>,Field> manualFields=new LinkedHashMap<>();
+    private final Set<List<String>> predicateFields=new HashSet<>();
     public RecipeDocument(JsonObject json) { this.json = json.deepCopy(); }
     public JsonObject json() { return json.deepCopy(); }
     public void replace(JsonObject json) {
-        if(!Objects.equals(this.json.get("type"),json.get("type")))manualFields.clear();
+        if(!Objects.equals(this.json.get("type"),json.get("type"))){manualFields.clear();predicateFields.clear();}
         this.json=json.deepCopy();manualFields.keySet().removeIf(path->!JsonFieldPaths.exists(this.json,path));
+        predicateFields.removeIf(path->!JsonFieldPaths.exists(this.json,path));
     }
     public List<Field> manualFields(){return List.copyOf(manualFields.values());}
     public void addManualField(Field field){
@@ -159,7 +161,31 @@ public final class RecipeDocument {
             if(object.has("ingredient")&&object.has("amount"))return object.get("amount").getAsInt();
         }
         if(field.output()&&field.label().equals("result")&&json.has("count"))return json.get("count").getAsInt();
+        var parent=predicateQuantity(field);if(parent!=null)return parent.get("count").getAsInt();
         return field.fluid()&&!field.output()?81000:1;
+    }
+    /** In 1.20 both stacks and predicates use item; a bare item output is ambiguous. */
+    private boolean itemPredicate(Field field){
+        if(field.fluid()||field.raw()||!field.chemical().isEmpty())return false;
+        var root=get(field);var leaf=atom(root);
+        if(leaf.isJsonObject()){
+            var object=leaf.getAsJsonObject();
+            if(object.has("id")||object.has("nbt"))return false;
+            boolean contextual=Set.of("basePredicate","ingredient").contains(field.path().get(field.path().size()-1));
+            if(root!=leaf||object.has("tag")||object.has("item")&&(!field.output()||contextual||predicateFields.contains(field.path())&&!object.has("count"))){
+                predicateFields.add(field.path());return true;
+            }
+        }else if(leaf.isJsonArray()&&!leaf.getAsJsonArray().isEmpty()){
+            for(var alternative:leaf.getAsJsonArray())if(!alternative.isJsonObject()||!(alternative.getAsJsonObject().has("item")||alternative.getAsJsonObject().has("tag"))||alternative.getAsJsonObject().has("id")||alternative.getAsJsonObject().has("nbt"))return false;
+            predicateFields.add(field.path());return true;
+        }
+        return false;
+    }
+    /** Sized predicates keep their count alongside the selected ingredient leaf. */
+    private JsonObject predicateQuantity(Field field){
+        if(field.path().size()<2||!itemPredicate(field))return null;
+        var parent=JsonFieldPaths.get(json,field.path().subList(0,field.path().size()-1));
+        return parent.isJsonObject()&&parent.getAsJsonObject().has("count")?parent.getAsJsonObject():null;
     }
     public boolean matches(Field f, Object value, net.minecraft.core.RegistryAccess registries) {
         if(f.raw())return false;
@@ -180,6 +206,7 @@ public final class RecipeDocument {
     public void accept(Field f, Object value, int count, net.minecraft.core.RegistryAccess registries) {
         if(f.raw())throw new IllegalArgumentException("vjrm.error.ingredient");
         if(!f.chemical().isEmpty()){accept(f,value,(long)count,registries);return;}
+        boolean predicate=itemPredicate(f);
         JsonElement root=get(f).deepCopy(),existing=atom(root);
         boolean nested=root!=existing;
         if(existing.isJsonPrimitive()){
@@ -193,9 +220,9 @@ public final class RecipeDocument {
         }else{
             JsonObject changed=existing.isJsonObject()?existing.getAsJsonObject():new JsonObject();
             if(value instanceof ItemStack stack&&!f.fluid()){
-                boolean itemKey=changed.has("item")||!changed.has("id");
+                boolean itemKey=predicate||changed.has("item")||!changed.has("id");
                 changed.remove("tag");changed.addProperty(itemKey?"item":"id",BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
-                if(f.output()){
+                if(f.output()&&!predicate){
                     changed.remove("nbt");if(stack.hasTag())changed.addProperty("nbt",stack.getTag().toString());
                     changed.addProperty("count",count);
                 }else if(changed.has("count"))changed.addProperty("count",count);
@@ -209,6 +236,7 @@ public final class RecipeDocument {
         }
         if(nested){var object=root.getAsJsonObject();if(object.has("amount"))object.addProperty("amount",count);else if(object.has("count"))object.addProperty("count",count);}
         set(f,root);
+        var parent=predicateQuantity(f);if(parent!=null)parent.addProperty("count",count);
     }
     public void accept(Field f,Object value,long count,net.minecraft.core.RegistryAccess registries) {
         if(f.chemical().isEmpty()){accept(f,value,Math.toIntExact(count),registries);return;}
@@ -250,7 +278,7 @@ public final class RecipeDocument {
         if(f.fluid()){
             return FluidStack.values(leaf,quantity,registries);
         }else{
-            if(!f.output())try{return Arrays.stream(Ingredient.fromJson(leaf).getItems()).map(item->item.copyWithCount(quantity)).toList();}catch(RuntimeException ignored){}
+            if(!f.output()||itemPredicate(f))try{return Arrays.stream(Ingredient.fromJson(leaf).getItems()).map(item->item.copyWithCount(quantity)).toList();}catch(RuntimeException ignored){}
             JsonObject object=leaf.isJsonObject()?leaf.getAsJsonObject():new JsonObject();
             String id=leaf.isJsonPrimitive()?leaf.getAsString():object.has("item")?object.get("item").getAsString():object.has("id")?object.get("id").getAsString():null;
             if(id!=null&&BuiltInRegistries.ITEM.containsKey(new ResourceLocation(id))){
@@ -264,7 +292,7 @@ public final class RecipeDocument {
     public void tag(Field f, String tag) {
         if(f.raw())throw new IllegalArgumentException("vjrm.error.tag");
         if(!f.chemical().isEmpty()){chemicalTag(f,tag,chemicalAmount(f));return;}
-        if (f.output() || ResourceLocation.tryParse(tag) == null) throw new IllegalArgumentException("vjrm.error.tag");
+        if (f.output()&&!itemPredicate(f) || ResourceLocation.tryParse(tag) == null) throw new IllegalArgumentException("vjrm.error.tag");
         JsonElement root=get(f).deepCopy(),leaf=atom(root);
         JsonObject o=leaf.isJsonObject()?leaf.getAsJsonObject():new JsonObject();o.remove("item");o.remove("id");o.remove("fluid");o.remove("fluidTag");o.addProperty(f.fluid()&&type().startsWith("create:")?"fluidTag":"tag",tag);
         if(root!=leaf)root.getAsJsonObject().add("ingredient",o);else root=o;
@@ -276,6 +304,7 @@ public final class RecipeDocument {
         var value=get(field).getAsJsonObject();
         String key=field.fluid()?"amount":"count";
         if(field.fluid()||value.has(key))value.addProperty(key,count);
+        var parent=predicateQuantity(field);if(parent!=null)parent.addProperty("count",count);
     }
     public void remove(Field f) {
         // A shaped key may appear more than once in the pattern: clearing it clears every occurrence.

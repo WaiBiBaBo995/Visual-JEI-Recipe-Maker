@@ -16,6 +16,7 @@ public final class PortServerChecks {
         var registries=server.registryAccess();
         Path output=Path.of("../../build/verification/server");Files.createDirectories(output);
         try{
+            ItemPredicateChecks.run(registries);
             for(String type:RecipeDocument.TYPES){
                 var doc=RecipeDocument.template(type);doc.decode(registries);
                 check(doc.fields().stream().anyMatch(f->!f.output()),"No input fields: "+type);
