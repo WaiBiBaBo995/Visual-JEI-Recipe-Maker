@@ -1,10 +1,18 @@
-# Visual JEI Recipe Maker 1.0.2 -English-
+# Visual JEI Recipe Maker 1.0.3 -English-
 
-## New in 1.0.2
+## New in 1.0.3
 
-JSON and supported GTCEu JS pages display native browser icons after recognized item/fluid IDs, including manually added fields. Recipe type search also shows category icons. Icons belong to the display layer: copying, formatting, and exports keep the original text unchanged. Wrapping, selection, mouse positioning, and cursor movement account for icon space; invalid drafts clear stale icons. Fluid samples fill their icons, and 26.1.2 separates ingredient/text rendering layers for correct highlighting and clipping.
+- Output predicates now accept tags and item IDs in their native ingredient format, including
+  Immersive Engineering 1.21.1 fields such as `results/0/basePredicate`.
+- Binding an inner predicate preserves and edits its enclosing quantity, while tag candidates
+  remain available for output previews and slot matching.
+- Ordinary item stack outputs retain their existing format and tag restrictions. The fix follows
+  each Minecraft version's ingredient representation, including compact strings on 26.1.2.
 
-All editions use the exact mod metadata version `1.0.2`. The inventory label retains its local-language name without the parenthetical explanation. The 26.1.2 editions support JEI only. See [CHANGELOG.md](CHANGELOG.md) for full history and [COMPATIBILITY.md](COMPATIBILITY.md) for platform-specific integrations.
+See [CHANGELOG.md](CHANGELOG.md) for the full history and [COMPATIBILITY.md](COMPATIBILITY.md)
+for platform-specific integrations.
+
+This branch targets **Minecraft 26.1.2 / NeoForge**, version **1.0.3**.
 
 ## Thaumaturge
 
@@ -12,7 +20,7 @@ Available on **NeoForge 26.1.2** with JEI 29.x. Install Thaumaturge and its depe
 
 `components` arrays map to independent input slots. Duplicate materials bind by array position; alternatives within one entry remain one slot. Data component ingredient conditions are retained as whole ingredients, preventing inner aspect components from becoming extra slots. Replacements update the selected ingredient condition while retaining other recipe data. JSON editing/highlighting/copying and datapack export remain available. See [COMPATIBILITY.md](COMPATIBILITY.md).
 
-Independent **Minecraft 26.1.2 NeoForge** edition, version **1.0.2**, using **Java 25**. Other Minecraft/loader editions are maintained on separate branches.
+Independent **Minecraft 26.1.2 NeoForge** edition, version **1.0.3**, using **Java 25**. Other Minecraft/loader editions are maintained on separate branches.
 
 ## Installation
 
@@ -60,16 +68,20 @@ Each branch is an independent project. Install the JAR matching both Minecraft a
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-Version **1.0.2** includes native item/fluid text icons, recipe category icons, the updated editor, and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.2`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
+Version **1.0.3** fixes item/tag output predicates and enclosing quantities while retaining native item/fluid text icons, recipe category icons, and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.3`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
 
 
-# Visual JEI Recipe Maker 1.0.2 -中文-
+# Visual JEI Recipe Maker 1.0.3 -中文-
 
-## 1.0.2 更新
+## 1.0.3 更新
 
-JSON 与适用版本的 GTCEu JS 编辑页在已识别的物品/流体 ID 后显示原生图标，手动字段也参与识别；配方类型检索显示类别图标。图标只属于显示层，不改变草稿、复制、格式化或导出的文字。换行、鼠标定位、选择与光标移动按图标占位计算，无效草稿会清理过期图标。流体图标使用满幅示例；26.1.2 分离材料与文字渲染层，保留高亮和裁切。
+- 支持标签的输出谓词可输入 `#标签` 或物品 ID，按原生材料格式写入，包含沉浸工程 1.21.1 的 `results/0/basePredicate`。
+- 绑定内部谓词时保留并修改外层数量；输出标签可正确解析预览候选和匹配槽位。
+- 普通物品堆栈输出保留原有格式与标签限制；各 Minecraft 版本使用各自材料表示，26.1.2 保留字符串格式。
 
-模组元数据统一为精确版本 `1.0.2`，玩家物品栏标题保留各语言名称并删除括号说明。26.1.2 仅支持 JEI。完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+
+当前分支适用于 **Minecraft 26.1.2 / NeoForge 1.0.3**。
 
 ## Thaumaturge
 
@@ -116,7 +128,7 @@ JEI「复制到 VJRM 编辑器」书本按钮沿用默认隐藏设置。在游�
 
 本次 GTCEu / Thaumaturge 兼容的具体用法见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-1.0.2：JSON 编辑页显示已识别物品/流体字符串的原生图标；配方类型检索显示类别图标。图标不改变草稿或剪贴板文本。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+1.0.3：JSON 编辑页显示已识别物品/流体字符串的原生图标；配方类型检索显示类别图标。图标不改变草稿或剪贴板文本。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 版本与分支
 

@@ -6,7 +6,10 @@ version = "${mod_version}+26.1.2-neoforge"
 group = mod_group_id
 base.archivesName = 'visual-jei-recipe-maker'
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-repositories { maven { url = 'https://modmaven.dev' } }
+repositories {
+    maven { url = 'https://maven.blamejared.com'; content { includeGroup 'mezz.jei'; includeGroup 'net.mezzdev.config' } }
+    maven { url = 'https://modmaven.dev' }
+}
 neoForge {
     version = neo_version
     runs {

@@ -30,7 +30,7 @@
   "vjrm.error.copy": "无法复制配方：%s",
   "vjrm.error.layout": "没有可用的配方预览，请安装并启用 JEI。",
   "vjrm.error.ingredient": "拖入的原料类型与槽位不匹配。",
-  "vjrm.error.tag": "请在输入字段使用有效的标签 ID。",
+  "vjrm.error.tag": "请在支持标签的字段使用有效的标签 ID。",
   "vjrm.error.amount": "数量必须为正整数。",
   "vjrm.error.required": "此字段不可清除，请在 JSON 面板中编辑。",
   "vjrm.error.size": "配方超过网络导出的大小限制，请导出到客户端。",
