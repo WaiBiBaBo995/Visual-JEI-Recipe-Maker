@@ -1,10 +1,18 @@
-# Visual JEI Recipe Maker 1.0.2 -English-
+# Visual JEI Recipe Maker 1.0.3 -English-
 
-## New in 1.0.2
+## New in 1.0.3
 
-JSON and supported GTCEu JS pages display native browser icons after recognized item/fluid IDs, including manually added fields. Recipe type search also shows category icons. Icons belong to the display layer: copying, formatting, and exports keep the original text unchanged. Wrapping, selection, mouse positioning, and cursor movement account for icon space; invalid drafts clear stale icons. Fluid samples fill their icons, and 26.1.2 separates ingredient/text rendering layers for correct highlighting and clipping.
+- Output predicates now accept tags and item IDs in their native ingredient format, including
+  Immersive Engineering 1.21.1 fields such as `results/0/basePredicate`.
+- Binding an inner predicate preserves and edits its enclosing quantity, while tag candidates
+  remain available for output previews and slot matching.
+- Ordinary item stack outputs retain their existing format and tag restrictions. The fix follows
+  each Minecraft version's ingredient representation, including compact strings on 26.1.2.
 
-All editions use the exact mod metadata version `1.0.2`. The inventory label retains its local-language name without the parenthetical explanation. The 26.1.2 editions support JEI only. See [CHANGELOG.md](CHANGELOG.md) for full history and [COMPATIBILITY.md](COMPATIBILITY.md) for platform-specific integrations.
+See [CHANGELOG.md](CHANGELOG.md) for the full history and [COMPATIBILITY.md](COMPATIBILITY.md)
+for platform-specific integrations.
+
+This branch targets **Minecraft 1.20.1 / Forge**, version **1.0.3**.
 
 ## GTCEu / KubeJS
 
@@ -16,7 +24,7 @@ The generated declaration uses `ServerEvents.recipes(event => { event.recipes["g
 
 Scripts are written relative to the client/server installation root at `kubejs/server_scripts/vjrm/<namespace>/<recipe-path>.js`. For example, `vjrm:chemical_reactor/test` maps to `kubejs/server_scripts/vjrm/vjrm/chemical_reactor/test.js`. Machine-type ID prefixes are normalized to avoid duplication. Server exports still check permissions, frequency, decoding, path scope, and explicit overwriting. Restart or reload KubeJS recipes to apply exported scripts. Ordinary recipes retain JSON/datapack export. See [COMPATIBILITY.md](COMPATIBILITY.md).
 
-Minecraft 1.20.1 Forge edition, version **1.0.2**. Requires Java 17 and Forge 47.1.1+. On the client, install JEI 15.74.0.225 or EMI 1.1.24+1.20.1, or both. This branch is an independent project; NeoForge 1.21.1 is on `main`.
+Minecraft 1.20.1 Forge edition, version **1.0.3**. Requires Java 17 and Forge 47.1.1+. On the client, install JEI 15.74.0.225 or EMI 1.1.24+1.20.1, or both. This branch is an independent project; NeoForge 1.21.1 is on `main`.
 
 ## Installation and Usage
 
@@ -95,16 +103,20 @@ Each branch is an independent project. Install the JAR matching both Minecraft a
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-Version **1.0.2** includes native item/fluid text icons, recipe category icons, the updated editor, and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.2`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
+Version **1.0.3** fixes item/tag output predicates and enclosing quantities while retaining native item/fluid text icons, recipe category icons, and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.3`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
 
 
-# Visual JEI Recipe Maker 1.0.2 -中文-
+# Visual JEI Recipe Maker 1.0.3 -中文-
 
-## 1.0.2 更新
+## 1.0.3 更新
 
-JSON 与适用版本的 GTCEu JS 编辑页在已识别的物品/流体 ID 后显示原生图标，手动字段也参与识别；配方类型检索显示类别图标。图标只属于显示层，不改变草稿、复制、格式化或导出的文字。换行、鼠标定位、选择与光标移动按图标占位计算，无效草稿会清理过期图标。流体图标使用满幅示例；26.1.2 分离材料与文字渲染层，保留高亮和裁切。
+- 支持标签的输出谓词可输入 `#标签` 或物品 ID，按原生材料格式写入，包含沉浸工程 1.21.1 的 `results/0/basePredicate`。
+- 绑定内部谓词时保留并修改外层数量；输出标签可正确解析预览候选和匹配槽位。
+- 普通物品堆栈输出保留原有格式与标签限制；各 Minecraft 版本使用各自材料表示，26.1.2 保留字符串格式。
 
-模组元数据统一为精确版本 `1.0.2`，玩家物品栏标题保留各语言名称并删除括号说明。26.1.2 仅支持 JEI。完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+
+当前分支适用于 **Minecraft 1.20.1 / Forge 1.0.3**。
 
 ## GTCEu / KubeJS
 
@@ -112,7 +124,7 @@ JSON 与适用版本的 GTCEu JS 编辑页在已识别的物品/流体 ID 后显
 
 GT 页使用「编辑 JS」「JS 字段」「添加输入」「添加输出」及两个脚本导出按钮。生成的 `merge` 声明保留完整配方数据，编辑回填仅解析声明，不执行 JS。脚本写入客户端或服务端安装根目录的 `kubejs/server_scripts/vjrm/<命名空间>/<配方路径>.js`；重启或重载 KubeJS 配方后生效。普通配方仍使用 JSON 和数据包导出。安装、操作、路径及权限细节见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-1.0.2 的 Minecraft 1.20.1 Forge 移植版。Java 17，Forge 47.1.1+；客户端安装 JEI 15.74.0.225 或 EMI 1.1.24+1.20.1，任选一个，也可以同时安装。此分支为独立工程，1.21.1 NeoForge 工程位于 `main` 分支。
+1.0.3 的 Minecraft 1.20.1 Forge 移植版。Java 17，Forge 47.1.1+；客户端安装 JEI 15.74.0.225 或 EMI 1.1.24+1.20.1，任选一个，也可以同时安装。此分支为独立工程，1.21.1 NeoForge 工程位于 `main` 分支。
 
 ## 安装与使用
 
@@ -188,7 +200,7 @@ EMI 客户端验证会关闭配方装饰器，从真实配方页点击书本按�
 
 本次 GTCEu / Thaumaturge 兼容的具体用法见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-1.0.2：JSON 编辑页显示已识别物品/流体字符串的原生图标；配方类型检索显示类别图标。图标不改变草稿或剪贴板文本。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+1.0.3：JSON 编辑页显示已识别物品/流体字符串的原生图标；配方类型检索显示类别图标。图标不改变草稿或剪贴板文本。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 版本与分支
 

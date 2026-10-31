@@ -19,7 +19,7 @@ Available on **NeoForge 26.1.2** with JEI 29.x. Install Thaumaturge and its depe
 # GTCEu / Thaumaturge 兼容 -中文-
 
 
-当前六个工程版本均为 1.0.2。下述 GTCEu/KubeJS 与 Thaumaturge 兼容于 0.8.0 引入，仍仅适用于列明的平台；Fabric 此次同步编辑器图标和类别图标。
+当前六个工程版本均为 1.0.3。下述 GTCEu/KubeJS 与 Thaumaturge 兼容于 0.8.0 引入，仍仅适用于列明的平台；各工程同步材料谓词修复，平台限定的兼容范围不变。
 
 ## GTCEu + KubeJS（1.20.1 Forge / 1.21.1 NeoForge）
 

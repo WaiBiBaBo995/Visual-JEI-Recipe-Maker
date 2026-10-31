@@ -33,6 +33,7 @@ minecraft {
     }
 }
 repositories {
+    maven { url = 'https://maven.blamejared.com'; content { includeGroup 'mezz.jei'; includeGroup 'net.mezzdev.config' } }
     flatDir { dirs "build/compat-deps" }
     maven { url = file('build/verification/maven'); content { includeGroup 'mekanism' } }
     maven { url = 'https://modmaven.dev'; content { includeGroup 'mekanism' }; metadataSources { mavenPom(); artifact() } }
