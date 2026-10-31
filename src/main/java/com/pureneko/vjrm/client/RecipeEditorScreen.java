@@ -2,6 +2,9 @@ package com.pureneko.vjrm.client;
 
 import com.google.gson.*;
 import com.pureneko.vjrm.recipe.RecipeDocument;
+import com.pureneko.vjrm.recipe.RecipeFieldProfiles;
+import com.pureneko.vjrm.recipe.JsonFieldPaths;
+import java.io.IOException;
 import com.pureneko.vjrm.recipe.ChemicalSupport;
 import com.pureneko.vjrm.recipe.RecipeDocument.Field;
 import com.pureneko.vjrm.export.DatapackExporter;
@@ -26,6 +29,52 @@ public final class RecipeEditorScreen extends VjrmScreen {
     public record DropTarget(Rect2i area, Field field) { }
     private final Screen parent;
     private RecipeDocument document;
+    private RecipeFieldProfiles profiles;
+    private String profileContext;
+    private Component profileError;
+    @FunctionalInterface private interface ProfileChange { void run(RecipeFieldProfiles profiles) throws IOException; }
+    private RecipeFieldProfiles profiles() throws IOException {
+        if(profiles==null)profiles=new RecipeFieldProfiles(minecraft.gameDirectory.toPath().resolve("config/vjrm/field_profiles.json"));
+        return profiles;
+    }
+    private void saveProfile(ProfileChange change) {
+        try{change.run(profiles());profileError=null;}
+        catch(IOException ex){profileError=t("profiles.error");throw new IllegalArgumentException("vjrm.profiles.error",ex);}
+    }
+    private void restoreProfileFields() {
+        try{
+            for(var field:profiles().fields(document.type()))if(JsonFieldPaths.exists(document.json(),field.path())){
+                try{document.addManualField(field);}catch(IllegalArgumentException ignored){ }
+            }
+            profileError=null;
+        }catch(IOException ex){profileError=t("profiles.error");}
+    }
+    private String profileLayout() {
+        var rect=layout.getRect();
+        var slots=drawSlots().stream().map(slot->{var r=slot.getRect();return new RecipeFieldProfiles.Slot(slot.getRole().name(),r.getX(),r.getY(),r.getWidth(),r.getHeight());}).toList();
+        return RecipeFieldProfiles.layoutKey(RecipePreview.providerId(),layout.getRecipeCategory().getRecipeType().getUid().toString(),usingSourceLayout,rect.getWidth(),rect.getHeight(),slots);
+    }
+    private void restoreProfileBindings() {
+        String key=profileLayout(),context=document.type()+":"+key;
+        if(!context.equals(profileContext)){manualBindings.clear();sourceBindings.clear();profileContext=context;}
+        try{
+            manualBindings.putAll(profiles().bindings(document.type(),key));
+            manualBindings.entrySet().removeIf(e->e.getKey()<0||e.getKey()>=drawSlots().size()||fields.stream().noneMatch(f->f.label().equals(e.getValue())));
+        }catch(IOException ex){profileError=t("profiles.error");}
+    }
+    private void bindSelected() {
+        if(selectedSlot==null||selected==null){status=t("select_slot");return;}
+        int index=drawSlots().indexOf(selectedSlot);
+        try{
+            if(!selected.path().getFirst().equals("$crafting"))saveProfile(store->store.bind(document.type(),profileLayout(),index,selected.label()));
+            manualBindings.put(index,selected.label());repeatedBindings.remove(selected.label());bindings.put(selectedSlot,selected);status=t("bound",selected.label());
+        }catch(IllegalArgumentException ex){status=t("profiles.error");}
+    }
+    private void resetProfile() {
+        saveProfile(store->store.reset(document.type()));
+        for(var field:document.manualFields())document.removeManualField(field.path());
+        manualBindings.clear();sourceBindings.clear();selected=null;status=t("profiles.reset_done");
+    }
     java.util.List<RecipeDocument.Field> annotationFields(){return document.manualFields();}
     private Category preferred;
     private Layout layout;
@@ -87,7 +136,7 @@ public final class RecipeEditorScreen extends VjrmScreen {
         idBox=addRenderableWidget(new EditBox(font,x+144,y+22,w-144,18,t("recipe_id")));idBox.setMaxLength(200);idBox.setValue(recipeId);idBox.setResponder(s->recipeId=s);idBox.setTooltip(Tooltip.create(t("recipe_id")));
         fieldButton=button(x,y+60,w-128,"field",b->cycleField());
         button(x+w-124,y+60,60,"manual.open",b->openManualFields());
-        button(x+w-60,y+60,60,"bind",b->{if(selectedSlot!=null && selected!=null){manualBindings.put(drawSlots().indexOf(selectedSlot),selected.label());repeatedBindings.remove(selected.label());bindings.put(selectedSlot,selected);status=t("bound",selected.label());}else status=t("select_slot");});
+        button(x+w-60,y+60,60,"bind",b->bindSelected());
         valueBox=addRenderableWidget(new EditBox(font,x,c+22,w-53,18,t("value")));valueBox.setMaxLength(com.pureneko.vjrm.recipe.RecipeSource.MAX_JSON);valueBox.setValue(value);valueBox.setHint(t("value"));valueBox.setResponder(s->value=s);
         countBox=addRenderableWidget(new EditBox(font,x+w-49,c+22,49,18,t("amount")));countBox.setMaxLength(19);countBox.setValue(amount);countBox.setResponder(s->amount=s);
         int bw=(w-4)/2;
@@ -105,6 +154,7 @@ public final class RecipeEditorScreen extends VjrmScreen {
         return layout.getRecipeSlotsView().getSlotViews();
     }
     private void refresh() {
+        restoreProfileFields();
         String path=selected==null?null:selected.label();fields=document.fields();selected=fields.stream().filter(f->f.label().equals(path)).findFirst().orElse(fields.isEmpty()?null:fields.getFirst());
         layout=null;bindings.clear();repeatedBindings.clear();selectedSlot=null;
         try {if(minecraft.level!=null){
@@ -114,10 +164,11 @@ public final class RecipeEditorScreen extends VjrmScreen {
             if(layout==null)status=t("error.layout");else{
                 var r=layout.getRect();int previewTop=panelY()+84,space=Math.max(20,controlsY()+18-previewTop-(usingSourceLayout?20:0));
                 previewScale=Math.min(1f,Math.min((panelWidth()-24f)/Math.max(1,r.getWidth()),space/(float)Math.max(1,r.getHeight())));
-                previewX=panelX()+(panelWidth()-Math.round(r.getWidth()*previewScale))/2;previewY=previewTop+(space-Math.round(r.getHeight()*previewScale))/2;layout.setPosition(0,0);buildBindings(recipe);
+                previewX=panelX()+(panelWidth()-Math.round(r.getWidth()*previewScale))/2;previewY=previewTop+(space-Math.round(r.getHeight()*previewScale))/2;layout.setPosition(0,0);restoreProfileBindings();buildBindings(recipe);
                 if(usingSourceLayout)overrideSourceSlots();
             }
         }}catch(RuntimeException ex){status=t("error.invalid",ex.getMessage());}
+        if(profileError!=null)status=profileError;
         updateField();if(clientButton!=null)clientButton.active=layout!=null;
         if(serverButton!=null)serverButton.active=layout!=null && minecraft.getConnection()!=null && com.pureneko.vjrm.network.VjrmNetworking.exportAvailable();
     }
@@ -152,7 +203,7 @@ public final class RecipeEditorScreen extends VjrmScreen {
         bindCreateProcessing(slots);
         for(int i=0;i<slots.size();i++){
             var s=slots.get(i);String explicit=manualBindings.get(i);
-            if(explicit!=null){fields.stream().filter(f->f.label().equals(explicit)).findFirst().ifPresent(f->bindings.put(s,f));continue;}
+            if(explicit!=null){repeatedBindings.remove(explicit);fields.stream().filter(f->f.label().equals(explicit)).findFirst().ifPresent(f->bindings.put(s,f));continue;}
             if(s.fieldPath()!=null){if(s.fieldPath().startsWith("$crafting/"))bindings.put(s,new Field(List.of("$crafting",s.fieldPath().substring(10)),false,false));else findField(s.fieldPath()).ifPresent(f->bindings.put(s,f));continue;}
             if(bindings.containsKey(s)||s.getRole()==Role.CATALYST||s.getRole()==Role.RENDER_ONLY)continue;
             if(usingSourceLayout&&sourceBindings.containsKey(i)){
@@ -172,7 +223,7 @@ public final class RecipeEditorScreen extends VjrmScreen {
             if(usingSourceLayout&&bindings.containsKey(s))sourceBindings.put(i,bindings.get(s).label());
         }
         if(vanillaGrid && (recipe instanceof ShapedRecipe || recipe instanceof ShapelessRecipe) && ins.size()==9) {
-            for(int i=0;i<ins.size();i++)if(ins.get(i).isEmpty()&&ins.get(i).fieldPath()==null)bindings.put(ins.get(i),new Field(List.of("$crafting",Integer.toString(i)),false,false));
+            for(int i=0;i<ins.size();i++)if(ins.get(i).isEmpty()&&ins.get(i).fieldPath()==null&&!bindings.containsKey(ins.get(i)))bindings.put(ins.get(i),new Field(List.of("$crafting",Integer.toString(i)),false,false));
         }
     }
     private void bindCreateProcessing(List<Slot> slots){
@@ -212,14 +263,17 @@ public final class RecipeEditorScreen extends VjrmScreen {
         int index=selectedSlot==null?-1:drawSlots().indexOf(selectedSlot);
         Field initial=selectedSlot==null?selected:bindings.get(selectedSlot);
         minecraft.setScreen(new ManualFieldScreen(this,document,initial,field->{
+            new RecipeDocument(document.json()).addManualField(field);
+            saveProfile(store->{if(index>=0&&layout!=null)store.putFieldAndBind(document.type(),field,profileLayout(),index);else store.putField(document.type(),field);});
             document.addManualField(field);selected=field;
             if(index>=0)manualBindings.put(index,field.label());
             status=t("manual.added","/"+field.label());
         },path->{
+            saveProfile(store->store.removeField(document.type(),path));
             document.removeManualField(path);
             manualBindings.values().removeIf(label->label.equals(com.pureneko.vjrm.recipe.JsonFieldPaths.label(path)));
             selected=null;status=t("manual.removed");
-        }));
+        },this::resetProfile));
     }
     private void updateField(){
         if(fieldButton!=null){fieldButton.setMessage(selected==null?t("field"):Component.literal(font.plainSubstrByWidth(selected.label(),fieldButton.getWidth()-10)));fieldButton.setTooltip(selected==null?null:Tooltip.create(Component.literal("/"+selected.label())));}
