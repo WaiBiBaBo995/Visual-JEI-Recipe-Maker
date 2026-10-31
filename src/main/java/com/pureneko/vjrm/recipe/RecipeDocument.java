@@ -139,8 +139,8 @@ public final class RecipeDocument {
         } else if (node.isJsonArray()) {
             // Alternative ingredients form one field, not independent slots.
             JsonArray a = node.getAsJsonArray();
-            if (!a.isEmpty() && (a.get(0).isJsonPrimitive() && ingredientPath(path) || a.get(0).isJsonObject() && (a.get(0).getAsJsonObject().has("item") || a.get(0).getAsJsonObject().has("tag"))) && !path.getLast().equals("ingredients") && !path.getLast().equals("results") && !path.getLast().equals("outputs")) {
-                out.add(new Field(List.copyOf(path), false, false)); return;
+            if (!a.isEmpty() && (a.get(0).isJsonPrimitive() && (ingredientPath(path)||label.contains("result")||label.contains("output")) || a.get(0).isJsonObject() && (a.get(0).getAsJsonObject().has("item") || a.get(0).getAsJsonObject().has("tag"))) && !path.getLast().equals("ingredients") && !path.getLast().equals("results") && !path.getLast().equals("outputs")) {
+                out.add(new Field(List.copyOf(path), false, label.contains("result")||label.contains("output"))); return;
             }
             for (int i=0; i<a.size(); i++) { var p = new ArrayList<>(path); p.add(Integer.toString(i)); scan(a.get(i), p, out); }
         } else if(node.isJsonPrimitive()&&node.getAsJsonPrimitive().isString()&&!path.isEmpty()){
@@ -176,7 +176,32 @@ public final class RecipeDocument {
             if(object.has(key))return object.get(key).getAsInt();
             if(object.has("ingredient")&&object.has("amount"))return object.get("amount").getAsInt();
         }
+        var parent=predicateQuantity(field);
+        if(parent!=null)return parent.get("count").getAsInt();
         return field.fluid()&&!field.output()?81000:1;
+    }
+    /** Slot role does not select the codec: machine outputs can contain item/tag predicates. */
+    private boolean itemPredicate(Field field){
+        if(field.fluid()||field.raw()||!field.chemical().isEmpty())return false;
+        var root=get(field);
+        return atom(root)!=root||itemPredicateShape(root);
+    }
+    private static boolean itemPredicateShape(JsonElement value){
+        if(value.isJsonPrimitive()&&value.getAsJsonPrimitive().isString()){
+            String id=value.getAsString();
+            return Identifier.tryParse(id.startsWith("#")?id.substring(1):id)!=null;
+        }
+        if(value.isJsonObject()){
+            var object=value.getAsJsonObject();
+            return !object.has("id")&&(object.has("item")||object.has("tag")||object.has("neoforge:ingredient_type"));
+        }
+        return value.isJsonArray()&&!value.getAsJsonArray().isEmpty()&&value.getAsJsonArray().asList().stream().allMatch(RecipeDocument::itemPredicateShape);
+    }
+    /** A selected predicate can keep its count on the enclosing sized-output object. */
+    private JsonObject predicateQuantity(Field field){
+        if(field.path().size()<2||!itemPredicate(field))return null;
+        var parent=JsonFieldPaths.get(json,field.path().subList(0,field.path().size()-1));
+        return parent.isJsonObject()&&parent.getAsJsonObject().has("count")?parent.getAsJsonObject():null;
     }
     public boolean matches(Field f, Object value, HolderLookup.Provider registries) {
         if(f.raw())return false;
@@ -197,6 +222,7 @@ public final class RecipeDocument {
     public void accept(Field f, Object value, int count, HolderLookup.Provider registries) {
         if(f.raw())throw new IllegalArgumentException("vjrm.error.ingredient");
         if(!f.chemical().isEmpty()){accept(f,value,(long)count,registries);return;}
+        boolean predicate=itemPredicate(f);
         JsonElement root=get(f).deepCopy(),existing=atom(root);
         boolean nested=root!=existing;
         if(existing.isJsonPrimitive() || existing.isJsonArray()){
@@ -206,9 +232,9 @@ public final class RecipeDocument {
         }else{
             JsonObject changed=existing.isJsonObject()?existing.getAsJsonObject():new JsonObject();
             if(value instanceof ItemStack stack&&!f.fluid()){
-                boolean itemKey=changed.has("item")||!f.output()&&!changed.has("id");
+                boolean itemKey=predicate||changed.has("item")||!f.output()&&!changed.has("id");
                 changed.remove("tag");changed.addProperty(itemKey?"item":"id",BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
-                if(f.output()){
+                if(f.output()&&!predicate){
                     changed.remove("components");
                     var encoded=net.minecraft.world.item.ItemStackTemplate.CODEC.encodeStart(registries.createSerializationContext(JsonOps.INSTANCE),net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(stack.copyWithCount(count))).getOrThrow().getAsJsonObject();
                     if(encoded.has("components"))changed.add("components",encoded.get("components"));
@@ -227,6 +253,7 @@ public final class RecipeDocument {
         }
         if(nested){var object=root.getAsJsonObject();if(object.has("amount"))object.addProperty("amount",count);else if(object.has("count"))object.addProperty("count",count);}
         set(f,root);
+        var parent=predicateQuantity(f);if(parent!=null)parent.addProperty("count",count);
     }
     public void accept(Field f,Object value,long count,HolderLookup.Provider registries) {
         if(f.chemical().isEmpty()){accept(f,value,Math.toIntExact(count),registries);return;}
@@ -269,7 +296,7 @@ public final class RecipeDocument {
         if(f.fluid()){
             return FluidStack.values(leaf,quantity,registries);
         }else{
-            if(!f.output()){
+            if(!f.output()||itemPredicate(f)){
                 var ingredient=Ingredient.CODEC.parse(ops,leaf).result();
                 if(ingredient.isPresent()){int count=quantity;return ingredient.get().items().map(h->new ItemStack(h,count)).toList();}
             }
@@ -282,7 +309,7 @@ public final class RecipeDocument {
     public void tag(Field f, String tag) {
         if(f.raw())throw new IllegalArgumentException("vjrm.error.tag");
         if(!f.chemical().isEmpty()){chemicalTag(f,tag,chemicalAmount(f));return;}
-        if (f.output() || Identifier.tryParse(tag) == null) throw new IllegalArgumentException("vjrm.error.tag");
+        if (f.output()&&!itemPredicate(f) || Identifier.tryParse(tag) == null) throw new IllegalArgumentException("vjrm.error.tag");
         JsonElement root=get(f).deepCopy(),leaf=atom(root);
         if(leaf.isJsonPrimitive()||leaf.isJsonArray()){
             if(root!=leaf)root.getAsJsonObject().addProperty("ingredient","#"+tag);else root=new JsonPrimitive("#"+tag);
@@ -296,10 +323,12 @@ public final class RecipeDocument {
     public void tag(Field field,String tag,int count){
         if(count<1)throw new IllegalArgumentException("vjrm.error.amount");
         tag(field,tag);
-        if(!get(field).isJsonObject())return;
-        var value=get(field).getAsJsonObject();
-        String key=field.fluid()?"amount":"count";
-        if(field.fluid()||value.has(key))value.addProperty(key,count);
+        if(get(field).isJsonObject()){
+            var value=get(field).getAsJsonObject();
+            String key=field.fluid()?"amount":"count";
+            if(field.fluid()||value.has(key))value.addProperty(key,count);
+        }
+        var parent=predicateQuantity(field);if(parent!=null)parent.addProperty("count",count);
     }
     public void remove(Field f) {
         // A shaped key may appear more than once in the pattern: clearing it clears every occurrence.

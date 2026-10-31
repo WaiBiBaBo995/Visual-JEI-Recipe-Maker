@@ -30,7 +30,7 @@
   "vjrm.error.copy": "無法複製配方：%s",
   "vjrm.error.layout": "沒有可用的配方預覽，請安裝並啟用 JEI。",
   "vjrm.error.ingredient": "拖入的原料類型與欄位不符。",
-  "vjrm.error.tag": "請在輸入欄位使用有效的標籤 ID。",
+  "vjrm.error.tag": "請在支援標籤的欄位使用有效的標籤 ID。",
   "vjrm.error.amount": "數量必須是正整數。",
   "vjrm.error.required": "此欄位不可清空，請在 JSON 面板編輯。",
   "vjrm.error.size": "配方超過網路匯出的大小限制，請匯出至用戶端。",
