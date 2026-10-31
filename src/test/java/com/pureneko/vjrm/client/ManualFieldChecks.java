@@ -11,6 +11,12 @@ import static com.pureneko.vjrm.client.EditorFeatureChecks.*;
 
 /** Real UI flows for adding fields that the automatic scanner intentionally misses. */
 final class ManualFieldChecks {
+    private static java.nio.file.Path profileFile;
+    private static RecipeEditorScreen editor(RecipeDocument document)throws Exception{
+        var editor=new RecipeEditorScreen(document,null,"vjrm:manual_checks",null);
+        var store=RecipeEditorScreen.class.getDeclaredField("profiles");store.setAccessible(true);
+        store.set(editor,new RecipeFieldProfiles(profileFile));return editor;
+    }
     private static RecipeDocument fixture(){
         var json=RecipeDocument.template("smelting").json();
         json.add("manual_payload",JsonParser.parseString("{\"hidden\":\"minecraft:emerald\",\"a/b~c\":[{\"token\":\"minecraft:gold_ingot\"}],\"custom\":{\"flag\":true}}"));
@@ -30,17 +36,34 @@ final class ManualFieldChecks {
         check(((Button)field(screen,"addButton")).active,"Existing JSON path was rejected: "+path);
         ((Button)field(screen,"addButton")).onPress(new net.minecraft.client.input.KeyEvent(257,0,0));
     }
+    private static void craftingBinding()throws Exception{
+        var mc=Minecraft.getInstance();var document=RecipeDocument.template("crafting_shapeless");
+        var editor=editor(document);mc.setScreen(editor);
+        var slots=((RecipePreview.Layout)field(editor,"layout")).getRecipeSlotsView().getSlotViews();
+        var empty=slots.stream().filter(s->s.getRole()==RecipePreview.Role.INPUT&&s.isEmpty()).findFirst().orElseThrow();
+        int index=slots.indexOf(empty);
+        var chosen=document.fields().stream().filter(f->f.label().equals("ingredients/0")).findFirst().orElseThrow();
+        var slotField=RecipeEditorScreen.class.getDeclaredField("selectedSlot");slotField.setAccessible(true);slotField.set(editor,empty);
+        var selectedField=RecipeEditorScreen.class.getDeclaredField("selected");selectedField.setAccessible(true);selectedField.set(editor,chosen);
+        button(editor,"vjrm.bind").onPress(new net.minecraft.client.input.KeyEvent(257,0,0));
+        var reopenedDocument=RecipeDocument.template("crafting_shapeless");var reopened=editor(reopenedDocument);mc.setScreen(reopened);
+        var restoredSlot=((RecipePreview.Layout)field(reopened,"layout")).getRecipeSlotsView().getSlotViews().get(index);
+        @SuppressWarnings("unchecked") var restored=(Map<RecipePreview.Slot,RecipeDocument.Field>)field(reopened,"bindings");
+        check(restored.get(restoredSlot)!=null&&restored.get(restoredSlot).label().equals("ingredients/0"),"Empty crafting slot fallback replaced the saved manual binding");
+        reopened.accept(restored.get(restoredSlot),new ItemStack(Items.DIAMOND));
+        check(reopenedDocument.json().getAsJsonArray("ingredients").size()==1,"Saved manual binding inserted a new ingredient instead of editing its field");
+        new RecipeFieldProfiles(profileFile).reset(document.type());
+    }
     static void run()throws Exception{
         var mc=Minecraft.getInstance();var previous=mc.screen;
+        var directory=java.nio.file.Files.createTempDirectory("vjrm-manual-ui-");profileFile=directory.resolve("profiles.json");
         try{
-            var document=fixture();var editor=new RecipeEditorScreen(document,null,"vjrm:manual_checks",null);mc.setScreen(editor);
+            var document=fixture();var editor=editor(document);mc.setScreen(editor);
             check(document.fields().stream().noneMatch(f->f.label().equals("manual_payload/hidden")),"Fixture no longer reproduces an undetected field");
             var target=editor.dropTargets(new ItemStack(Items.STONE)).stream().filter(t->t.field().output()).findFirst().orElseThrow().area();
             @SuppressWarnings("unchecked") var bindings=(Map<RecipePreview.Slot,RecipeDocument.Field>)field(editor,"bindings");
             var unbound=bindings.keySet().stream().filter(s->s.getRole()==RecipePreview.Role.OUTPUT).findFirst().orElseThrow();bindings.remove(unbound);
             editor.mouseClicked(target.getX()+3,target.getY()+3,0);
-            check(field(editor,"selectedSlot")!=null,"Unbound slot click missed: "+target);
-            System.out.println("Manual selected role: "+((RecipePreview.Slot)field(editor,"selectedSlot")).getRole());
             var picker=open(editor);var pathBox=(EditBox)field(picker,"pathBox");
             picker.init(mc,320,240);pathBox=(EditBox)field(picker,"pathBox");
             @SuppressWarnings("unchecked") var rows=(List<Button>)field(picker,"rows");
@@ -55,7 +78,16 @@ final class ManualFieldChecks {
             var added=document.fields().stream().filter(f->f.label().equals("manual_payload/hidden")).findFirst().orElseThrow();
             check(added.output()&&!added.raw(),"Field type/role lost");
             @SuppressWarnings("unchecked") var rebound=(Map<RecipePreview.Slot,RecipeDocument.Field>)field(editor,"bindings");
-            check(rebound.entrySet().stream().anyMatch(e->e.getKey().getRole()==RecipePreview.Role.OUTPUT&&e.getValue().equals(added)),"New field was not bound to the selected unbound slot; manual="+field(editor,"manualBindings")+"; actual="+rebound);
+            check(rebound.entrySet().stream().anyMatch(e->e.getKey().getRole()==RecipePreview.Role.OUTPUT&&e.getValue().equals(added)),"New field was not bound to the selected unbound slot");
+            var reopenedDocument=fixture();var reopened=editor(reopenedDocument);mc.setScreen(reopened);
+            check(reopenedDocument.manualFields().contains(added),"Reopening did not restore the saved manual field");
+            @SuppressWarnings("unchecked") var restored=(Map<RecipePreview.Slot,RecipeDocument.Field>)field(reopened,"bindings");
+            check(restored.entrySet().stream().anyMatch(e->e.getKey().getRole()==RecipePreview.Role.OUTPUT&&e.getValue().equals(added)),"Reopening did not restore the saved slot binding");
+            check(reopenedDocument.json().equals(fixture().json()),"Restoring metadata changed recipe values");
+            var missing=new RecipeDocument(RecipeDocument.template("smelting").json());mc.setScreen(editor(missing));
+            check(missing.manualFields().isEmpty()&&new RecipeFieldProfiles(profileFile).fields(document.type()).contains(added),"Opening a recipe without the optional path erased its profile");
+            var other=RecipeDocument.template("smoking");mc.setScreen(editor(other));check(other.manualFields().isEmpty(),"Fields leaked into another recipe type");
+            mc.setScreen(editor);
             editor.accept(added,new ItemStack(Items.DIAMOND));
             check(document.get(added).getAsString().equals("minecraft:diamond")&&document.json().get("result").equals(unchanged.get("result")),"Manual replacement modified the wrong JSON node");
             choose(open(editor),"/manual_payload/a~1b~0c/0/token","item",false);
@@ -81,10 +113,17 @@ final class ManualFieldChecks {
             picker=open(editor);pathBox=(EditBox)field(picker,"pathBox");pathBox.setValue("/manual_payload/custom");unchanged=document.json();
             ((Button)field(picker,"removeButton")).onPress(new net.minecraft.client.input.KeyEvent(257,0,0));
             check(document.manualFields().size()==3&&document.json().equals(unchanged),"Removing a manual definition deleted recipe data");
+            check(new RecipeFieldProfiles(profileFile).fields(document.type()).stream().noneMatch(f->f.label().equals("manual_payload/custom")),"Removing a manual definition was not persisted");
+            var resetDocument=fixture();var resetEditor=editor(resetDocument);mc.setScreen(resetEditor);var resetBefore=resetDocument.json();
+            button(open(resetEditor),"vjrm.profiles.reset").onPress(new net.minecraft.client.input.KeyEvent(257,0,0));
+            check(resetDocument.manualFields().isEmpty()&&resetDocument.json().equals(resetBefore)&&!new RecipeFieldProfiles(profileFile).hasProfile(resetDocument.type()),"Reset did not clear metadata while preserving recipe JSON");
+            var afterReset=fixture();mc.setScreen(editor(afterReset));check(afterReset.manualFields().isEmpty(),"Reset profile reappeared on reopening");
+            mc.setScreen(editor);
             var replaced=document.json();replaced.remove("manual_payload");document.replace(replaced);check(document.manualFields().size()==1,"Stale paths were kept after JSON replacement");
             replaced=document.json();replaced.addProperty("type","minecraft:smoking");document.replace(replaced);check(document.manualFields().isEmpty(),"Changing recipe type kept old field definitions");
-            System.out.println("PASS manual JSON field picker: missing fields, real selected-slot binding, item replacement, raw scalar/object apply and rollback, escaped paths, arrays, resize, removal and metadata isolation");
-        }finally{mc.setScreen(previous);}
+            craftingBinding();
+            System.out.println("PASS manual JSON field picker: saved field/slot reopen, missing-path preservation, type isolation, durable delete/reset, empty crafting slot binding priority, item replacement, raw JSON rollback, escaped paths and resize");
+        }finally{mc.setScreen(previous);java.nio.file.Files.deleteIfExists(profileFile);java.nio.file.Files.deleteIfExists(directory);}
     }
     static void preview(){
         var editor=new RecipeEditorScreen(fixture(),null,"vjrm:manual_preview",null);Minecraft.getInstance().setScreen(editor);

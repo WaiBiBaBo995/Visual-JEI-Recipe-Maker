@@ -66,6 +66,7 @@ public final class RecipePreview {
     public static Hooks hooks() { var current=provider;return current==null?NO_HOOKS:current; }
     public static void install(Provider value) { provider=value; }
     public static void uninstall(Provider value) { if(provider==value)provider=null; }
+    public static String providerId() { var current=provider;return current==null?"none":current.getClass().getName(); }
     public static boolean available() { return provider!=null; }
     public static Category category(Object value) { return value==null?null:value instanceof Category c?c:provider==null?null:provider.category(value); }
     public static Optional<Layout> layout(Recipe<?> recipe, Category preferred, RecipeDocument document) { return provider==null?Optional.empty():provider.layout(recipe,preferred,document); }

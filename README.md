@@ -22,6 +22,13 @@ Available on **NeoForge 26.1.2** with JEI 29.x. Install Thaumaturge and its depe
 
 Independent **Minecraft 26.1.2 NeoForge** edition, version **1.0.3**, using **Java 25**. Other Minecraft/loader editions are maintained on separate branches.
 
+Manual fields and slot bindings save automatically to `config/vjrm/field_profiles.json` in the
+client instance and restore across restarts, worlds, and servers. Fields match the recipe type;
+bindings also match the viewer, category, and ordered slot layout. Missing paths or incompatible
+layouts are skipped without erasing saved settings. **Reset Type** in **JSON Fields** clears the
+current type's saved metadata. Removing/resetting definitions leaves recipe JSON unchanged;
+these settings are not included in exports.
+
 ## Installation
 
 - Minecraft **26.1.2**, NeoForge **26.1.2.122+**, Java **25**.
@@ -106,7 +113,9 @@ JEI「复制到 VJRM 编辑器」书本按钮沿用默认隐藏设置。在游�
 
 「数值」可修改运行时间、能量等已存在的数值和常见数字字符串。「编辑 JSON」保留语法高亮、括号补全、缩进、撤销/重做、格式化、校验和「复制到剪贴板」。复制按钮原样复制当前草稿，不应用草稿。
 
-未识别的字段可通过「JSON字段」搜索节点或填写 JSON Pointer（例如 `/custom/input/0`）添加；指定输入/输出及物品、流体或原始 JSON 类型。先选择槽位再添加，会直接绑定。手动定义只属于当前草稿，不混入导出 JSON。第三方私有结构可选内部 ID 节点或使用原始 JSON 编辑；修改仍由该配方实际 serializer 校验。
+未识别的字段可通过「JSON字段」搜索节点或填写 JSON Pointer（例如 `/custom/input/0`）添加；指定输入/输出及物品、流体或原始 JSON 类型。先选择槽位再添加，会直接绑定。手动字段和槽位绑定会自动保存到客户端实例的 `config/vjrm/field_profiles.json`，重启后、跨存档和服务器均可复用。
+字段按配方类型恢复；槽位绑定还会核对 JEI／EMI、类别及槽位布局。当前配方缺少的路径或不匹配的布局会跳过，保留配置供其他配方使用。
+在「JSON字段」中点击「重置此类型」可清除此类型保存的字段和绑定。移除或重置定义不会修改配方 JSON，也不会将这些配置写入导出配方。第三方私有结构可选内部 ID 节点或使用原始 JSON 编辑；修改仍由该配方实际 serializer 校验。
 
 26.1.2 的原版材料使用 `"minecraft:stone"`、`"#minecraft:logs"` 等紧凑格式。模板、材料替换、标签、可选材料数组和空工作台槽位插入已适配；不会把原版材料写回旧版的 `{"item":"..."}` 格式。导出目录为 `data/<namespace>/recipe/<path>.json`，数据包格式为 **101.1**。
 
