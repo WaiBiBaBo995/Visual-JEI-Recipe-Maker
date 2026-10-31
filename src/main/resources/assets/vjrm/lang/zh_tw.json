@@ -97,12 +97,16 @@
   "vjrm.manual.output": "用途：輸出",
   "vjrm.manual.add": "新增／更新",
   "vjrm.manual.remove": "移除手動欄位",
-  "vjrm.manual.help": "選擇節點或輸入 JSON Pointer 路徑；陣列下標從 0 開始。",
+  "vjrm.manual.help": "選取節點或輸入 JSON Pointer 路徑，陣列索引從 0 開始。欄位與綁定會自動儲存於目前用戶端。",
   "vjrm.manual.hint": "請選擇存在的節點；配方 type 請透過「編輯 JSON」修改。",
   "vjrm.manual.selected": "已選擇：%s",
-  "vjrm.manual.added": "已向目前草稿新增 JSON 欄位 %s。",
+  "vjrm.manual.added": "已為此配方類型儲存 JSON 欄位 %s。",
   "vjrm.manual.removed": "已移除手動欄位定義。",
   "vjrm.manual.raw_help": "原始 JSON：在編輯器值欄輸入有效 JSON，不支援原料拖曳。",
   "vjrm.manual.drag_help": "私有包裝格式請選擇內部原料或 ID 節點，避免替換整個包裝。",
-  "vjrm.error.field_path": "請選擇存在的節點；配方 type 請透過「編輯 JSON」修改。"
+  "vjrm.error.field_path": "請選擇存在的節點；配方 type 請透過「編輯 JSON」修改。",
+  "vjrm.profiles.reset": "重設此類型",
+  "vjrm.profiles.reset_help": "清除此配方類型儲存的手動欄位與欄位綁定，保留配方 JSON。",
+  "vjrm.profiles.reset_done": "已重設此配方類型儲存的欄位與綁定。",
+  "vjrm.profiles.error": "無法讀取或儲存欄位設定，請檢查 config/vjrm/field_profiles.json。"
 }

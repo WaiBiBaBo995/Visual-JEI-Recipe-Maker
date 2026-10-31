@@ -49,7 +49,12 @@ Client exports are in `vjrm_exports/vjrm_generated/`; server exports are in the 
 | 1.21.1 | `data/<namespace>/recipe/<path>.json` | 48 |
 | 26.1.2 | `data/<namespace>/recipe/<path>.json` | 101.1 |
 
-Vanilla 26.1.2 ingredients use compact strings and `#tags`. Manual field definitions stay in the current draft and are never exported as VJRM metadata. Explicitly enable overwriting when replacing an existing recipe.
+Vanilla 26.1.2 ingredients use compact strings and `#tags`. Manual fields and slot bindings save automatically to `config/vjrm/field_profiles.json` in the
+client instance and restore across restarts, worlds, and servers. Fields match the recipe type;
+bindings also match the viewer, category, and ordered slot layout. Missing paths or incompatible
+layouts are skipped without erasing saved settings. **Reset Type** in **JSON Fields** clears the
+current type's saved metadata. Removing/resetting definitions leaves recipe JSON unchanged;
+these settings are not included in exports. Explicitly enable overwriting when replacing an existing recipe.
 
 ## Build and Verification
 
@@ -131,7 +136,9 @@ Fabric 配置使用 JSON：`config/vjrm-client.json` 的 `showJeiCopyButton`、`
 | 1.21.1 | `data/<namespace>/recipe/<path>.json` | 48 |
 | 26.1.2 | `data/<namespace>/recipe/<path>.json` | 101.1 |
 
-26.1.2 模板和材料编辑使用新版的字符串及 `#标签` 格式。手动字段定义只存在于当前草稿，不写进配方 JSON。
+26.1.2 模板和材料编辑使用新版的字符串及 `#标签` 格式。手动字段和槽位绑定会自动保存到客户端实例的 `config/vjrm/field_profiles.json`，重启后、跨存档和服务器均可复用。
+字段按配方类型恢复；槽位绑定还会核对 JEI／EMI、类别及槽位布局。当前配方缺少的路径或不匹配的布局会跳过，保留配置供其他配方使用。
+在「JSON字段」中点击「重置此类型」可清除此类型保存的字段和绑定。移除或重置定义不会修改配方 JSON，也不会将这些配置写入导出配方。
 
 ## 开发与验证
 
