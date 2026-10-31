@@ -9,6 +9,7 @@ group = mod_group_id
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 repositories {
+    maven { url = 'https://maven.blamejared.com'; content { includeGroup 'mezz.jei'; includeGroup 'net.mezzdev.config' } }
     maven { url = 'https://modmaven.dev' }
     maven { url = 'https://maven.terraformersmc.com/releases/' }
 }

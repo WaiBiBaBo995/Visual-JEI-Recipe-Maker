@@ -1,6 +1,6 @@
 # Visual JEI Recipe Maker
 
-[![Version](https://img.shields.io/badge/version-1.0.2-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.3-blue)](CHANGELOG.md)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-62b47a)](#installation)
 [![Loader](https://img.shields.io/badge/loader-NeoForge-orange)](#installation)
 
@@ -24,7 +24,7 @@ matching Forge and Fabric branches.
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
-- [What's new in 1.0.2](#whats-new-in-102)
+- [What's new in 1.0.3](#whats-new-in-103)
 - [Editing recipes](#editing-recipes)
 - [Exporting and applying recipes](#exporting-and-applying-recipes)
 - [Compatibility and limits](#compatibility-and-limits)
@@ -72,18 +72,17 @@ JEI `19.27.0.350` and EMI `1.1.24+1.21.1`.
 > In Controls → Visual JEI Recipe Maker, bind **Show/Hide JEI/EMI Recipe Copy Button**
 > (unbound by default), then use that key to toggle visibility.
 
-## What's new in 1.0.2
+## What's new in 1.0.3
 
-- **Item and fluid icons beside recognized IDs** in JSON and supported GTCEu JS pages,
-  including IDs recognized through manual fields.
-- **Category icons in recipe type search**, alongside the existing names, IDs, and tooltips.
-- **Text stays intact:** icons affect only rendering. Draft text, copying, formatting, and exports
-  contain no added characters; wrapping, selection, and cursor placement account for icon space.
-- **Cleaner display:** stale icons clear on invalid drafts, fluid samples fill their icons,
-  and inventory titles keep their local-language names without the parenthetical explanation.
+- Output predicates now accept tags and item IDs in their native ingredient format, including
+  Immersive Engineering 1.21.1 fields such as `results/0/basePredicate`.
+- Binding an inner predicate preserves and edits its enclosing quantity, while tag candidates
+  remain available for output previews and slot matching.
+- Ordinary item stack outputs retain their existing format and tag restrictions. The fix follows
+  each Minecraft version's ingredient representation, including compact strings on 26.1.2.
 
-Recipe IDs, type IDs, and unrelated strings do not gain icons merely because they resemble registry IDs.
-See [CHANGELOG.md](CHANGELOG.md) for the full release history and platform-specific changes.
+See [CHANGELOG.md](CHANGELOG.md) for the full history and [COMPATIBILITY.md](COMPATIBILITY.md)
+for platform-specific integrations.
 
 ## Editing recipes
 
@@ -91,7 +90,10 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history and platform-speci
 
 - Drag replacement keeps the slot's existing count. A merged ingredient slot replaces the whole
   duplicate ingredient group; applying a count changes that group's multiplicity.
-- Enter tags such as `#minecraft:logs` for supported inputs. Right-click removes editable crafting
+- Enter tags such as `#minecraft:logs` for fields that support tags, including output predicates
+  such as Immersive Engineering's `results/0/basePredicate`. Replacing a predicate with an item ID
+  keeps its `item` format and enclosing `count`; ordinary `id` stack outputs require an item ID.
+  Right-click removes editable crafting
   inputs, and empty crafting slots can be filled again. Required fields and the last input remain
   subject to serializer validation; invalid edits roll back.
 - A **yellow border** marks a slot that needs a field mapping. Select the slot, choose the field
@@ -254,7 +256,7 @@ For `verifyClient`, first create `run/client-check/saves/Vjrm UI Verification`
 .\gradlew.bat verifyClient
 .\gradlew.bat -Pviewer=emi verifyClient
 .\gradlew.bat -Pviewer=both verifyClient
-# 1.0.2 ingredient and category icon checks
+# 1.0.3 ingredient and category icon checks
 .\gradlew.bat -PverifyIcons verifyClient
 ```
 
@@ -294,7 +296,7 @@ Historical reference environments (see [CHANGELOG.md](CHANGELOG.md)):
   These are historical results for that platform.
 - The supplied NeoForge GTCEu/KubeJS integration environment used NeoForge 21.1.199.
 
-These references describe their original checks, not a new runtime verification of every 1.0.2 build.
+These references describe their original checks, not a new runtime verification of every 1.0.3 build.
 If the NeoForge configuration endpoint is unavailable and `build/neoforge-moddev-config.json` exists,
 append `--init-script tools/local-launch-config.gradle`. Use `--offline` only with a complete cache.
 

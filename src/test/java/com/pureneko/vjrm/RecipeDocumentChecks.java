@@ -20,6 +20,7 @@ public final class RecipeDocumentChecks {
     public static void recipesAndExport(net.minecraft.gametest.framework.GameTestHelper helper) throws Exception {
         var registries=helper.getLevel().registryAccess();
         int checks=0;
+        checks+=ItemPredicateChecks.run(registries);
 
         var chemicalFields=new RecipeDocument(com.google.gson.JsonParser.parseString("{\"type\":\"mekanism:compressing\",\"input_chemical\":{\"gas\":\"mekanism:oxygen\",\"amount\":2},\"output\":{\"slurry\":\"mekanism:clean_iron\",\"amount\":4},\"conditions\":[{\"gas\":\"mekanism:hydrogen\"}]}").getAsJsonObject()).fields();
         if(chemicalFields.size()!=2||!chemicalFields.stream().anyMatch(f->f.label().equals("input_chemical")&&f.chemical().equals("gas"))||!chemicalFields.stream().anyMatch(f->f.output()&&f.chemical().equals("slurry")))throw new AssertionError("Chemical fields or conditions misclassified");checks++;

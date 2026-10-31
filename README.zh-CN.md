@@ -1,6 +1,6 @@
 # Visual JEI Recipe Maker
 
-[![版本](https://img.shields.io/badge/version-1.0.2-blue)](CHANGELOG.md)
+[![版本](https://img.shields.io/badge/version-1.0.3-blue)](CHANGELOG.md)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-62b47a)](#安装)
 [![加载器](https://img.shields.io/badge/loader-NeoForge-orange)](#安装)
 
@@ -22,7 +22,7 @@ VJRM 让整合包作者直接从熟悉的配方页面开始：复制已有配方
 
 - [安装](#安装)
 - [快速上手](#快速上手)
-- [1.0.2 更新亮点](#102-更新亮点)
+- [1.0.3 更新亮点](#103-更新亮点)
 - [编辑配方](#编辑配方)
 - [导出与生效](#导出与生效)
 - [兼容与限制](#兼容与限制)
@@ -67,22 +67,20 @@ NeoForge 21.1.238+。当前分支的基础依赖版本为 JEI `19.27.0.350` 和 
 > 在「控制设置 → Visual JEI Recipe Maker」中绑定「显示/隐藏 JEI/EMI 配方复制按钮」
 > （默认未绑定），再按该键切换显示。
 
-## 1.0.2 更新亮点
+## 1.0.3 更新亮点
 
-- **物品、流体 ID 旁显示原生图标**：适用于 JSON 和受支持的 GTCEu JS 页面，也包含手动字段识别的 ID。
-- **配方类型搜索显示类别图标**：保留名称、ID 与悬停提示，更容易辨认类别。
-- **图标不改变文本**：仅影响显示，不向草稿、复制、格式化或导出内容插入字符；换行、选择与光标定位考虑图标占位。
-- **显示细节优化**：无效草稿清理过期图标，流体图标使用满幅示例，物品栏标题保留各语言名称并移除括号说明。
+- 支持标签的输出谓词可输入 `#标签` 或物品 ID，按原生材料格式写入，包含沉浸工程 1.21.1 的 `results/0/basePredicate`。
+- 绑定内部谓词时保留并修改外层数量；输出标签可正确解析预览候选和匹配槽位。
+- 普通物品堆栈输出保留原有格式与标签限制；各 Minecraft 版本使用各自材料表示，26.1.2 保留字符串格式。
 
-配方 ID、类型 ID 和其他普通字符串不会仅因格式类似注册 ID 就显示图标。
-完整更新历史与平台差异见 [CHANGELOG.md](CHANGELOG.md)。
+完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
 ## 编辑配方
 
 ### 槽位、数量与绑定
 
 - 拖拽替换保留槽位原有数量；合并原料槽会替换整组重复材料，「应用修改」的数量可调整该组的重复次数。
-- 支持的输入可填写 `#minecraft:logs` 等标签。右键移除可编辑的工作台输入，空工作台槽位可重新拖入材料。
+- 支持标签的字段可填写 `#minecraft:logs` 等标签，包括沉浸工程 `results/0/basePredicate` 这类输出谓词；输入物品 ID 时保留 `item` 结构，数量仍在外层 `count`。普通 `id` 物品堆栈输出使用物品 ID。右键移除可编辑的工作台输入，空工作台槽位可重新拖入材料。
   必需字段和最后一个输入仍受 serializer 校验保护；无效修改会回滚。
 - **黄色边框**表示需要手动映射字段。先选中槽位，再在配方图上方选择字段并点击「绑定槽位」。
   燃料、催化剂和纯展示槽不属于可导出的原料。
@@ -231,7 +229,7 @@ VJRM 按真实配方 ID 读取**服务端当前生效的数据包 JSON**，保�
 .\gradlew.bat verifyClient
 .\gradlew.bat -Pviewer=emi verifyClient
 .\gradlew.bat -Pviewer=both verifyClient
-# 1.0.2 材料图标与类别图标检查
+# 1.0.3 材料图标与类别图标检查
 .\gradlew.bat -PverifyIcons verifyClient
 ```
 
@@ -264,7 +262,7 @@ JSON 辅助及手动字段。EMI 检查会在关闭装饰器后操作真实配�
 - Mekanism 10.4.16.80：**Forge 1.20.1** 历史检查覆盖 730 个化学品字段，结果针对该平台。
 - 已提供的 NeoForge GTCEu/KubeJS 联动环境使用 NeoForge 21.1.199。
 
-以上描述各次原始检查，并不表示对所有 1.0.2 构建重新进行了游戏运行验证。
+以上描述各次原始检查，并不表示对所有 1.0.3 构建重新进行了游戏运行验证。
 若 NeoForge 配置端点无法访问，且已有 `build/neoforge-moddev-config.json`，可附加
 `--init-script tools/local-launch-config.gradle`；仅在缓存齐全时使用 `--offline`。
 
