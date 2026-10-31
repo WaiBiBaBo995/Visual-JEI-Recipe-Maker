@@ -95,14 +95,18 @@
   "vjrm.manual.input": "Role: input",
   "vjrm.manual.output": "Role: output",
   "vjrm.manual.add": "Add / update",
-  "vjrm.manual.remove": "Remove manual field",
-  "vjrm.manual.help": "Choose a node or enter its JSON Pointer path. Array indices start at 0.",
+  "vjrm.manual.remove": "Remove Field",
+  "vjrm.manual.help": "Choose a node or enter its JSON Pointer path. Array indices start at 0. Fields and bindings save automatically for this client.",
   "vjrm.manual.hint": "Choose an existing node; edit the recipe type in the JSON editor.",
   "vjrm.manual.selected": "Selected: %s",
-  "vjrm.manual.added": "Added JSON field %s to this draft.",
+  "vjrm.manual.added": "Saved JSON field %s for this recipe type.",
   "vjrm.manual.removed": "Removed manual field definition.",
   "vjrm.manual.raw_help": "Raw JSON: enter valid JSON in the editor value box; no ingredient drag.",
   "vjrm.manual.drag_help": "Private wrapper: select the inner ingredient or ID node for replacement.",
   "vjrm.error.field_path": "Choose an existing node; edit the recipe type in the JSON editor.",
-  "vjrm.error.fixed_count": "Vanilla cooking recipes only support one output item."
+  "vjrm.error.fixed_count": "Vanilla cooking recipes only support one output item.",
+  "vjrm.profiles.reset": "Reset Type",
+  "vjrm.profiles.reset_help": "Clear saved manual fields and slot bindings for this recipe type. Recipe JSON stays unchanged.",
+  "vjrm.profiles.reset_done": "Reset saved fields and bindings for this recipe type.",
+  "vjrm.profiles.error": "Unable to read or save field settings. Check config/vjrm/field_profiles.json."
 }

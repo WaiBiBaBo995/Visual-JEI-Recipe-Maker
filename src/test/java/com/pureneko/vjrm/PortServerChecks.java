@@ -16,6 +16,8 @@ public final class PortServerChecks {
         var registries=server.registryAccess();
         Path output=Path.of("../../build/verification/server");Files.createDirectories(output);
         try{
+            int profileChecks=FieldProfileChecks.run();
+            System.out.println("PASS persistent field profile disk checks: "+profileChecks);
             int predicateChecks=ItemPredicateChecks.run(registries);
             for(String type:RecipeDocument.TYPES){
                 var doc=RecipeDocument.template(type);doc.decode(registries);

@@ -1,5 +1,10 @@
 # Changelog -English-
 
+## Unreleased
+
+- Automatically save manual JSON field definitions and slot bindings per recipe type in the client instance's `config/vjrm/field_profiles.json`, shared across worlds and servers and restored after restarts. Match bindings by viewer, category, and ordered slot layout; preserve saved optional fields when a recipe lacks their paths.
+- Add **Reset Type** to clear a type's saved metadata without changing recipe JSON. Use atomic saves, merge independent editors' changes, preserve unreadable configuration files, and report configuration errors in English, Simplified Chinese, and Traditional Chinese. Synchronize all six editions.
+
 ## 1.0.3 — 2026-10-31
 
 - Update all six Minecraft/loader editions to 1.0.3, including loader metadata and CI artifact names. Prefer JEI's official Maven repository before the community mirror without changing dependency versions.
