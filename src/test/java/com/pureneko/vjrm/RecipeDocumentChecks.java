@@ -22,6 +22,8 @@ public final class RecipeDocumentChecks {
         int checks=0;
         checks+=FieldProfileChecks.run();
         checks+=ItemPredicateChecks.run(registries);
+        IngredientDataChecks.run(registries);
+        IngredientDataChecks.export(helper.getLevel().getServer());
 
         var chemicalFields=new RecipeDocument(com.google.gson.JsonParser.parseString("{\"type\":\"mekanism:compressing\",\"input_chemical\":{\"gas\":\"mekanism:oxygen\",\"amount\":2},\"output\":{\"slurry\":\"mekanism:clean_iron\",\"amount\":4},\"conditions\":[{\"gas\":\"mekanism:hydrogen\"}]}").getAsJsonObject()).fields();
         if(chemicalFields.size()!=2||!chemicalFields.stream().anyMatch(f->f.label().equals("input_chemical")&&f.chemical().equals("gas"))||!chemicalFields.stream().anyMatch(f->f.output()&&f.chemical().equals("slurry")))throw new AssertionError("Chemical fields or conditions misclassified");checks++;
@@ -37,9 +39,9 @@ public final class RecipeDocumentChecks {
             System.out.println("PASS serializer: "+type);checks++;
         }
         var shaped=RecipeDocument.template("crafting_shaped");shaped.remove(shaped.fields().stream().filter(f->f.label().equals("key/A")).findFirst().orElseThrow());shaped.decode(registries);checks++;
-        shaped.addCraftingInput(0,new ItemStack(Items.DIAMOND));
+        shaped.addCraftingInput(0,new ItemStack(Items.DIAMOND),registries);
         if(!shaped.decode(registries).getIngredients().getFirst().test(new ItemStack(Items.DIAMOND)))throw new AssertionError("Empty grid cell did not accept input");checks++;
-        var shapeless=RecipeDocument.template("crafting_shapeless");shapeless.addCraftingInput(0,new ItemStack(Items.DIAMOND));
+        var shapeless=RecipeDocument.template("crafting_shapeless");shapeless.addCraftingInput(0,new ItemStack(Items.DIAMOND),registries);
         if(shapeless.decode(registries).getIngredients().size()!=2)throw new AssertionError("Shapeless insert failed");checks++;
         var extra=RecipeDocument.template("smelting").json();extra.addProperty("custom_extension",12);extra.addProperty("cookingtime",79);
         var preserved=new RecipeDocument(extra);preserved.accept(preserved.fields().stream().filter(f->f.output()).findFirst().orElseThrow(),new ItemStack(Items.GOLD_INGOT),2,registries);

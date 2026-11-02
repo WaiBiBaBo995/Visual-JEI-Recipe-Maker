@@ -123,5 +123,6 @@
   "vjrm.profiles.reset": "Reset Type",
   "vjrm.profiles.reset_help": "Clear saved manual fields and slot bindings for this recipe type. Recipe JSON stays unchanged.",
   "vjrm.profiles.reset_done": "Reset saved fields and bindings for this recipe type.",
-  "vjrm.profiles.error": "Unable to read or save field settings. Check config/vjrm/field_profiles.json."
+  "vjrm.profiles.error": "Unable to read or save field settings. Check config/vjrm/field_profiles.json.",
+  "vjrm.error.removed_component": "This NeoForge version cannot match removed item components. The recipe was kept unchanged."
 }

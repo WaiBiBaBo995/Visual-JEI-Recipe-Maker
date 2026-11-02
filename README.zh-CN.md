@@ -1,6 +1,6 @@
 # Visual JEI Recipe Maker
 
-[![版本](https://img.shields.io/badge/version-1.0.3-blue)](CHANGELOG.md)
+[![版本](https://img.shields.io/badge/version-1.0.4-blue)](CHANGELOG.md)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-62b47a)](#安装)
 [![加载器](https://img.shields.io/badge/loader-NeoForge-orange)](#安装)
 
@@ -22,7 +22,7 @@ VJRM 让整合包作者直接从熟悉的配方页面开始：复制已有配方
 
 - [安装](#安装)
 - [快速上手](#快速上手)
-- [1.0.3 更新亮点](#103-更新亮点)
+- [1.0.4 更新亮点](#104-更新亮点)
 - [编辑配方](#编辑配方)
 - [导出与生效](#导出与生效)
 - [兼容与限制](#兼容与限制)
@@ -67,13 +67,14 @@ NeoForge 21.1.238+。当前分支的基础依赖版本为 JEI `19.27.0.350` 和 
 > 在「控制设置 → Visual JEI Recipe Maker」中绑定「显示/隐藏 JEI/EMI 配方复制按钮」
 > （默认未绑定），再按该键切换显示。
 
-## 1.0.3 更新亮点
+## 1.0.4 更新亮点
 
-- 支持标签的输出谓词可输入 `#标签` 或物品 ID，按原生材料格式写入，包含沉浸工程 1.21.1 的 `results/0/basePredicate`。
-- 绑定内部谓词时保留并修改外层数量；输出标签可正确解析预览候选和匹配槽位。
-- 普通物品堆栈输出保留原有格式与标签限制；各 Minecraft 版本使用各自材料表示，26.1.2 保留字符串格式。
+- 修复拖入带附魔、自定义数据的原料后数据丢失，覆盖空合成槽添加、预览和配方导出。
+- Minecraft 1.20.1 使用原生严格 NBT 材料，整份 NBT 必须相同。1.21.1／26.1.2 要求记录的各组件值相同，允许额外组件类型；自定义数据按完整值比较。
+- 仅修改数量保留原条件，替换物品或改用标签时重建条件。
+- NeoForge 1.21.1 的原生格式不能表达组件缺失，遇到显式删除组件的原料时拒绝修改并保留原配方；其他组件版本保留删除条件。导出配方使用对应加载器／API 的原生材料格式。
 
-完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+完整历史见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 编辑配方
 
@@ -232,7 +233,7 @@ VJRM 按真实配方 ID 读取**服务端当前生效的数据包 JSON**，保�
 .\gradlew.bat verifyClient
 .\gradlew.bat -Pviewer=emi verifyClient
 .\gradlew.bat -Pviewer=both verifyClient
-# 1.0.3 材料图标与类别图标检查
+# 1.0.4 材料图标与类别图标检查
 .\gradlew.bat -PverifyIcons verifyClient
 ```
 
@@ -265,7 +266,7 @@ JSON 辅助及手动字段。EMI 检查会在关闭装饰器后操作真实配�
 - Mekanism 10.4.16.80：**Forge 1.20.1** 历史检查覆盖 730 个化学品字段，结果针对该平台。
 - 已提供的 NeoForge GTCEu/KubeJS 联动环境使用 NeoForge 21.1.199。
 
-以上描述各次原始检查，并不表示对所有 1.0.3 构建重新进行了游戏运行验证。
+以上描述各次原始检查，并不表示对所有 1.0.4 构建重新进行了游戏运行验证。
 若 NeoForge 配置端点无法访问，且已有 `build/neoforge-moddev-config.json`，可附加
 `--init-script tools/local-launch-config.gradle`；仅在缓存齐全时使用 `--offline`。
 

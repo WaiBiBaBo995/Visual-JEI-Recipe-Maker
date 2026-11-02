@@ -123,5 +123,6 @@
   "vjrm.profiles.reset": "重設此類型",
   "vjrm.profiles.reset_help": "清除此配方類型儲存的手動欄位與欄位綁定，保留配方 JSON。",
   "vjrm.profiles.reset_done": "已重設此配方類型儲存的欄位與綁定。",
-  "vjrm.profiles.error": "無法讀取或儲存欄位設定，請檢查 config/vjrm/field_profiles.json。"
+  "vjrm.profiles.error": "無法讀取或儲存欄位設定，請檢查 config/vjrm/field_profiles.json。",
+  "vjrm.error.removed_component": "目前的 NeoForge 版本無法比對已移除的物品元件，已保留原配方。"
 }

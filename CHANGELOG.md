@@ -1,12 +1,17 @@
 # Changelog -English-
 
-## Unreleased
+## 1.0.4 — 2026-11-02
 
-- Automatically save manual JSON field definitions and slot bindings per recipe type in the client instance's `config/vjrm/field_profiles.json`, shared across worlds and servers and restored after restarts. Match bindings by viewer, category, and ordered slot layout; preserve saved optional fields when a recipe lacks their paths.
-- Add **Reset Type** to clear a type's saved metadata without changing recipe JSON. Use atomic saves, merge independent editors' changes, preserve unreadable configuration files, and report configuration errors in English, Simplified Chinese, and Traditional Chinese. Synchronize all six editions.
+- Preserve enchantments and custom item data when dragging ingredients, adding empty crafting slots, previewing, and exporting recipes.
+- Minecraft 1.20.1 uses native strict whole-NBT ingredients. Minecraft 1.21.1/26.1.2 matches each recorded component value exactly and allows additional component types; custom data is compared as a complete value.
+- Quantity-only edits preserve the original predicate. Replacing an item or switching to a tag rebuilds its conditions.
+- NeoForge 1.21.1 rejects ingredients with explicitly removed components and retains the previous recipe because its native format cannot express absence. Other component-era editions preserve removals. Exported recipes use the corresponding loader/API's native formats.
+- Update all six editions, loader metadata and CI artifacts to 1.0.4; add runtime ingredient and editor regression checks.
 
 ## 1.0.3 — 2026-10-31
 
+- Automatically save manual JSON field definitions and slot bindings per recipe type in the client instance's `config/vjrm/field_profiles.json`, shared across worlds and servers and restored after restarts. Match bindings by viewer, category, and ordered slot layout; preserve saved optional fields when a recipe lacks their paths.
+- Add **Reset Type** to clear a type's saved metadata without changing recipe JSON. Use atomic saves, merge independent editors' changes, preserve unreadable configuration files, and report configuration errors in English, Simplified Chinese, and Traditional Chinese. Synchronize all six editions.
 - Update all six Minecraft/loader editions to 1.0.3, including loader metadata and CI artifact names. Prefer JEI's official Maven repository before the community mirror without changing dependency versions.
 - Distinguish an output slot's role from its JSON representation. Item/tag output predicates can switch between tags and item IDs without being rewritten as ItemStack JSON. This fixes Immersive Engineering 1.21.1 arc furnace fields such as `results/0/basePredicate`, which previously rejected tags or failed decoding after an item replacement.
 - Read and update the enclosing `count` when a binding targets the predicate inside a sized ingredient/output. Keep counts out of the predicate, retain surrounding recipe conditions and machine parameters, and resolve output tag candidates for preview and slot matching.
@@ -140,8 +145,18 @@ Historical test results describe the corresponding releases; they are not new ru
 
 # 更新记录 -中文-
 
+## 1.0.4 — 2026-11-02
+
+- 修复拖入带附魔、自定义数据的原料后数据丢失，覆盖空合成槽添加、预览和配方导出。
+- Minecraft 1.20.1 使用原生严格 NBT 材料，整份 NBT 必须相同。1.21.1／26.1.2 要求记录的各组件值相同，允许额外组件类型；自定义数据按完整值比较。
+- 仅修改数量保留原条件，替换物品或改用标签时重建条件。
+- NeoForge 1.21.1 的原生格式不能表达组件缺失，遇到显式删除组件的原料时拒绝修改并保留原配方；其他组件版本保留删除条件。导出配方使用对应加载器／API 的原生材料格式。
+- 六个维护分支、加载器元数据与 CI 构建产物同步升级至 1.0.4，添加实际运行环境中的材料匹配和编辑器回归检查。
+
 ## 1.0.3 — 2026-10-31
 
+- 按配方类型自动将手动 JSON 字段定义和槽位绑定保存到客户端实例的 `config/vjrm/field_profiles.json` 中，跨世界和服务器共享，并在重启后恢复。按查看器、类别和有序槽位布局匹配绑定；当配方缺少相应路径时，保留已保存的可选字段。
+- 添加 Reset Type（重置类型），用于清除某类型已保存的元数据，而不更改配方 JSON。使用原子保存，合并不同编辑器的更改，保留无法读取的配置文件，并以英语、简体中文和繁体中文报告配置错误。同步全部六个版本。
 - 六个 Minecraft／加载器工程统一更新为 1.0.3，同步加载器元数据与 CI 产物名称；构建优先从 JEI 官方 Maven 仓库解析依赖，保持依赖版本不变。
 - 区分槽位的输出用途与字段的 JSON 表示。物品／标签输出谓词可以在标签和物品 ID 之间切换，不再被改写为物品堆栈格式；修复沉浸工程 1.21.1 电弧炉 `results/0/basePredicate` 绑定后标签被拒绝、替换物品导致解码失败的问题。
 - 绑定到带数量材料／产物的内部谓词时，读取并修改外层 `count`，不把数量写入谓词；保留配方条件和机器参数，并为输出标签解析预览候选与槽位匹配。

@@ -1,6 +1,6 @@
 # Visual JEI Recipe Maker
 
-[![Version](https://img.shields.io/badge/version-1.0.3-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.4-blue)](CHANGELOG.md)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-62b47a)](#installation)
 [![Loader](https://img.shields.io/badge/loader-NeoForge-orange)](#installation)
 
@@ -24,7 +24,7 @@ matching Forge and Fabric branches.
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
-- [What's new in 1.0.3](#whats-new-in-103)
+- [What's new in 1.0.4](#whats-new-in-104)
 - [Editing recipes](#editing-recipes)
 - [Exporting and applying recipes](#exporting-and-applying-recipes)
 - [Compatibility and limits](#compatibility-and-limits)
@@ -72,17 +72,14 @@ JEI `19.27.0.350` and EMI `1.1.24+1.21.1`.
 > In Controls → Visual JEI Recipe Maker, bind **Show/Hide JEI/EMI Recipe Copy Button**
 > (unbound by default), then use that key to toggle visibility.
 
-## What's new in 1.0.3
+## What's new in 1.0.4
 
-- Output predicates now accept tags and item IDs in their native ingredient format, including
-  Immersive Engineering 1.21.1 fields such as `results/0/basePredicate`.
-- Binding an inner predicate preserves and edits its enclosing quantity, while tag candidates
-  remain available for output previews and slot matching.
-- Ordinary item stack outputs retain their existing format and tag restrictions. The fix follows
-  each Minecraft version's ingredient representation, including compact strings on 26.1.2.
+- Preserve enchantments and custom item data when dragging ingredients, adding empty crafting slots, previewing, and exporting recipes.
+- Minecraft 1.20.1 uses native strict whole-NBT ingredients. Minecraft 1.21.1/26.1.2 matches each recorded component value exactly and allows additional component types; custom data is compared as a complete value.
+- Quantity-only edits preserve the original predicate. Replacing an item or switching to a tag rebuilds its conditions.
+- NeoForge 1.21.1 rejects ingredients with explicitly removed components and retains the previous recipe because its native format cannot express absence. Other component-era editions preserve removals. Exported recipes use the corresponding loader/API's native formats.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full history and [COMPATIBILITY.md](COMPATIBILITY.md)
-for platform-specific integrations.
+See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 ## Editing recipes
 
@@ -259,7 +256,7 @@ For `verifyClient`, first create `run/client-check/saves/Vjrm UI Verification`
 .\gradlew.bat verifyClient
 .\gradlew.bat -Pviewer=emi verifyClient
 .\gradlew.bat -Pviewer=both verifyClient
-# 1.0.3 ingredient and category icon checks
+# 1.0.4 ingredient and category icon checks
 .\gradlew.bat -PverifyIcons verifyClient
 ```
 
@@ -299,7 +296,7 @@ Historical reference environments (see [CHANGELOG.md](CHANGELOG.md)):
   These are historical results for that platform.
 - The supplied NeoForge GTCEu/KubeJS integration environment used NeoForge 21.1.199.
 
-These references describe their original checks, not a new runtime verification of every 1.0.3 build.
+These references describe their original checks, not a new runtime verification of every 1.0.4 build.
 If the NeoForge configuration endpoint is unavailable and `build/neoforge-moddev-config.json` exists,
 append `--init-script tools/local-launch-config.gradle`. Use `--offline` only with a complete cache.
 
