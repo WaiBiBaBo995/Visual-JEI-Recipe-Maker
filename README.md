@@ -1,18 +1,16 @@
-# Visual JEI Recipe Maker 1.0.3 -English-
+# Visual JEI Recipe Maker 1.0.4 -English-
 
-## New in 1.0.3
+## New in 1.0.4
 
-- Output predicates now accept tags and item IDs in their native ingredient format, including
-  Immersive Engineering 1.21.1 fields such as `results/0/basePredicate`.
-- Binding an inner predicate preserves and edits its enclosing quantity, while tag candidates
-  remain available for output previews and slot matching.
-- Ordinary item stack outputs retain their existing format and tag restrictions. The fix follows
-  each Minecraft version's ingredient representation, including compact strings on 26.1.2.
+- Preserve enchantments and custom item data when dragging ingredients, adding empty crafting slots, previewing, and exporting recipes.
+- Minecraft 1.20.1 uses native strict whole-NBT ingredients. Minecraft 1.21.1/26.1.2 matches each recorded component value exactly and allows additional component types; custom data is compared as a complete value.
+- Quantity-only edits preserve the original predicate. Replacing an item or switching to a tag rebuilds its conditions.
+- NeoForge 1.21.1 rejects ingredients with explicitly removed components and retains the previous recipe because its native format cannot express absence. Other component-era editions preserve removals. Exported recipes use the corresponding loader/API's native formats.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history and [COMPATIBILITY.md](COMPATIBILITY.md)
 for platform-specific integrations.
 
-This branch targets **Minecraft 1.21.1 / Fabric**, version **1.0.3**.
+This branch targets **Minecraft 1.21.1 / Fabric**, version **1.0.4**.
 
 ## Installation
 
@@ -27,6 +25,8 @@ Install the VJRM JAR for this branch's Minecraft version alongside the matching 
 For multiplayer, install the same Minecraft/loader edition of VJRM and Fabric API on the server to read active recipe JSON, list source templates, and export to world datapacks. The server does not need JEI/EMI. On 26.1.2, Fabric recipe synchronization handles changed vanilla recipes; third-party categories use their own synchronization and browser integration.
 
 ## Usage
+
+Exported component ingredients require Fabric API on the server.
 
 1. Press **F8** in a world. The editor scales and stays centered, with field selection, **JSON Fields**, and binding controls above the original recipe diagram.
 2. Select a recipe type and drag ingredients from the browser or player inventory. No items are consumed. Click a slot to edit its ID/tag/count; right-click removes optional inputs or shows a rejection reason at the cursor with a vanilla sound.
@@ -84,20 +84,21 @@ Each branch is an independent project. Install the JAR matching both Minecraft a
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-Version **1.0.3** fixes item/tag output predicates and enclosing quantities while retaining native item/fluid text icons, recipe category icons, and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.3`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
+Version **1.0.4** preserves ingredient NBT/components and quantity-only edits. See [CHANGELOG.md](CHANGELOG.md) for history.
 
 
-# Visual JEI Recipe Maker 1.0.3 -中文-
+# Visual JEI Recipe Maker 1.0.4 -中文-
 
-## 1.0.3 更新
+## 1.0.4 更新
 
-- 支持标签的输出谓词可输入 `#标签` 或物品 ID，按原生材料格式写入，包含沉浸工程 1.21.1 的 `results/0/basePredicate`。
-- 绑定内部谓词时保留并修改外层数量；输出标签可正确解析预览候选和匹配槽位。
-- 普通物品堆栈输出保留原有格式与标签限制；各 Minecraft 版本使用各自材料表示，26.1.2 保留字符串格式。
+- 修复拖入带附魔、自定义数据的原料后数据丢失，覆盖空合成槽添加、预览和配方导出。
+- Minecraft 1.20.1 使用原生严格 NBT 材料，整份 NBT 必须相同。1.21.1／26.1.2 要求记录的各组件值相同，允许额外组件类型；自定义数据按完整值比较。
+- 仅修改数量保留原条件，替换物品或改用标签时重建条件。
+- NeoForge 1.21.1 的原生格式不能表达组件缺失，遇到显式删除组件的原料时拒绝修改并保留原配方；其他组件版本保留删除条件。导出配方使用对应加载器／API 的原生材料格式。
 
 完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-当前分支适用于 **Minecraft 1.21.1 / Fabric 1.0.3**。
+当前分支适用于 **Minecraft 1.21.1 / Fabric 1.0.4**。
 
 ## 安装组合
 
@@ -112,6 +113,8 @@ Version **1.0.3** fixes item/tag output predicates and enclosing quantities whil
 客户端需要浏览器。多人服务器安装相同游戏版本、加载器的 VJRM 和 Fabric API，用于读取当前实际生效的配方 JSON、列出来源模板并向世界数据包导出；VJRM 的服务端功能无需 JEI/EMI。26.1.2 为原版配方启用 Fabric 的配方同步，浏览器可以收到服务器原版配方的改动；第三方类别继续使用其自身的同步和浏览器集成。
 
 ## 使用
+
+Fabric 1.21.1 将带附魔、名称或其他已修改组件的物品拖入原料槽时，会通过 Fabric API 原生组件材料保留这些条件。已记录组件的值须完全相同，允许额外的组件类型；仅改数量会保留条件，重新拖入物品或切换标签会重建条件。导出的组件配方需要服务器安装 Fabric API。
 
 - 进入世界按 **F8**。编辑器随分辨率缩放并居中，字段选择、JSON 字段和绑定按钮位于原生配方图上方。
 - 从浏览器或玩家物品栏拖拽填入，操作不消耗物品。点击槽位可编辑 ID、标签和数量；右键不可移除时，在鼠标处显示原因并播放原版提示音。
