@@ -128,6 +128,7 @@ public final class RecipeDocument {
                 var inner=new ArrayList<Field>();scan(o.get("ingredient"),path,inner);
                 if(inner.size()==1&&inner.getFirst().path().equals(path)){out.add(inner.getFirst());return;}
             }
+            if(!path.isEmpty()&&o.has("fabric:type")&&!label.contains("condition")){out.add(new Field(List.copyOf(path),false,label.contains("result")||label.contains("output")));return;}
             Identifier stackId=o.has("id") && o.get("id").isJsonPrimitive()?Identifier.tryParse(o.get("id").getAsString()):null;
             boolean fluid = o.has("amount") && o.has("id") || o.has("fluid") || o.has("amount") && o.has("type") && o.get("type").isJsonPrimitive() && o.get("type").getAsString().startsWith("neoforge:") && !o.has("item") || label.contains("fluid") && o.has("tag") || (stackId!=null && (label.contains("fluid") || BuiltInRegistries.FLUID.containsKey(stackId) && !BuiltInRegistries.ITEM.containsKey(stackId)));
             if(o.has("type")&&o.get("type").isJsonPrimitive()&&o.get("type").getAsString().contains("fluid"))fluid=true;
@@ -139,7 +140,7 @@ public final class RecipeDocument {
         } else if (node.isJsonArray()) {
             // Alternative ingredients form one field, not independent slots.
             JsonArray a = node.getAsJsonArray();
-            if (!a.isEmpty() && (a.get(0).isJsonPrimitive() && (ingredientPath(path)||label.contains("result")||label.contains("output")) || a.get(0).isJsonObject() && (a.get(0).getAsJsonObject().has("item") || a.get(0).getAsJsonObject().has("tag"))) && !path.getLast().equals("ingredients") && !path.getLast().equals("results") && !path.getLast().equals("outputs")) {
+            if (!a.isEmpty() && itemPredicateShape(a) && !path.getLast().equals("ingredients") && !path.getLast().equals("results") && !path.getLast().equals("outputs")) {
                 out.add(new Field(List.copyOf(path), false, label.contains("result")||label.contains("output"))); return;
             }
             for (int i=0; i<a.size(); i++) { var p = new ArrayList<>(path); p.add(Integer.toString(i)); scan(a.get(i), p, out); }
@@ -181,6 +182,18 @@ public final class RecipeDocument {
         return field.fluid()&&!field.output()?81000:1;
     }
     /** Slot role does not select the codec: machine outputs can contain item/tag predicates. */
+    public void setQuantity(Field field,int count){
+        if(field.raw()||count<1)throw new IllegalArgumentException("vjrm.error.amount");
+        var root=get(field).deepCopy();
+        if(root.isJsonObject()){
+            var object=root.getAsJsonObject();
+            if(object.has("ingredient")&&object.has("amount"))object.addProperty("amount",count);
+            else if(field.fluid())object.addProperty("amount",count);
+            else if(object.has("count")||field.output()&&!itemPredicate(field))object.addProperty("count",count);
+        }
+        set(field,root);
+        var parent=predicateQuantity(field);if(parent!=null)parent.addProperty("count",count);
+    }
     private boolean itemPredicate(Field field){
         if(field.fluid()||field.raw()||!field.chemical().isEmpty())return false;
         var root=get(field);
@@ -193,7 +206,7 @@ public final class RecipeDocument {
         }
         if(value.isJsonObject()){
             var object=value.getAsJsonObject();
-            return !object.has("id")&&(object.has("item")||object.has("tag")||object.has("neoforge:ingredient_type"));
+            return !object.has("id")&&(object.has("item")||object.has("tag")||object.has("neoforge:ingredient_type")||object.has("fabric:type"));
         }
         return value.isJsonArray()&&!value.getAsJsonArray().isEmpty()&&value.getAsJsonArray().asList().stream().allMatch(RecipeDocument::itemPredicateShape);
     }
@@ -210,7 +223,7 @@ public final class RecipeDocument {
             var ops = registries.createSerializationContext(JsonOps.INSTANCE);
             JsonElement atom=atom(get(f));
             if (value instanceof ItemStack item && !f.fluid()) {
-                if(f.output()||atom.isJsonPrimitive())return values(f,registries).stream().filter(v->v instanceof ItemStack).map(v->(ItemStack)v).anyMatch(s->ItemStack.isSameItemSameComponents(s,item));
+                if(f.output()&&!itemPredicate(f)||atom.isJsonPrimitive()&&!itemPredicate(f))return values(f,registries).stream().filter(v->v instanceof ItemStack).map(v->(ItemStack)v).anyMatch(s->ItemStack.isSameItemSameComponents(s,item));
                 return Ingredient.CODEC.parse(ops, atom).result().map(i -> i.test(item)).orElseGet(()->values(f,registries).stream().filter(v->v instanceof ItemStack).map(v->(ItemStack)v).anyMatch(s->ItemStack.isSameItemSameComponents(s,item)));
             }
             if (value instanceof FluidStack fluid && f.fluid()) {
@@ -219,13 +232,30 @@ public final class RecipeDocument {
         } catch (RuntimeException ignored) { }
         return false;
     }
+    private static JsonElement itemIngredient(ItemStack stack,HolderLookup.Provider registries){
+        Ingredient ingredient=stack.getComponentsPatch().isEmpty()?Ingredient.of(stack.getItem()):net.fabricmc.fabric.api.recipe.v1.ingredient.DefaultCustomIngredients.components(stack);
+        return Ingredient.CODEC.encodeStart(registries.createSerializationContext(JsonOps.INSTANCE),ingredient).getOrThrow();
+    }
+    private static JsonObject clearItemPredicate(JsonElement existing){
+        var changed=existing.isJsonObject()?existing.getAsJsonObject():new JsonObject();
+        for(String key:List.of("item","id","tag","fabric:type","type","neoforge:ingredient_type","strict","items","base","components","nbt","ingredients","subtracted"))changed.remove(key);
+        return changed;
+    }
     public void accept(Field f, Object value, int count, HolderLookup.Provider registries) {
         if(f.raw())throw new IllegalArgumentException("vjrm.error.ingredient");
         if(!f.chemical().isEmpty()){accept(f,value,(long)count,registries);return;}
         boolean predicate=itemPredicate(f);
         JsonElement root=get(f).deepCopy(),existing=atom(root);
         boolean nested=root!=existing;
-        if(existing.isJsonPrimitive() || existing.isJsonArray()){
+        if(value instanceof ItemStack stack&&!f.fluid()&&(!f.output()||predicate)&&!(existing.isJsonObject()&&existing.getAsJsonObject().has("id"))&&(!existing.isJsonPrimitive()||!stack.getComponentsPatch().isEmpty())){
+            var changed=clearItemPredicate(existing);var encoded=itemIngredient(stack,registries);
+            JsonElement replacement;
+            if(encoded.isJsonObject()){for(var entry:encoded.getAsJsonObject().entrySet())changed.add(entry.getKey(),entry.getValue());replacement=changed;}
+            else if(changed.size()>0){changed.addProperty("item",encoded.getAsString());replacement=changed;}
+            else replacement=encoded;
+            if(changed.has("count"))changed.addProperty("count",count);
+            if(nested)root.getAsJsonObject().add("ingredient",replacement);else root=replacement;
+        }else if(existing.isJsonPrimitive() || existing.isJsonArray()){
             String id=value instanceof ItemStack s?BuiltInRegistries.ITEM.getKey(s.getItem()).toString():value instanceof FluidStack s?BuiltInRegistries.FLUID.getKey(s.getFluid()).toString():null;
             if(id==null)throw new IllegalArgumentException("vjrm.error.ingredient");
             if(nested)root.getAsJsonObject().addProperty("ingredient",id);else root=new JsonPrimitive(id);
@@ -234,7 +264,7 @@ public final class RecipeDocument {
             if(value instanceof ItemStack stack&&!f.fluid()){
                 boolean itemKey=predicate||changed.has("item")||!f.output()&&!changed.has("id");
                 changed.remove("tag");changed.addProperty(itemKey?"item":"id",BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
-                if(f.output()&&!predicate){
+                if(!predicate&&(f.output()||changed.has("id"))){
                     changed.remove("components");
                     var encoded=net.minecraft.world.item.ItemStackTemplate.CODEC.encodeStart(registries.createSerializationContext(JsonOps.INSTANCE),net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(stack.copyWithCount(count))).getOrThrow().getAsJsonObject();
                     if(encoded.has("components"))changed.add("components",encoded.get("components"));
@@ -274,6 +304,7 @@ public final class RecipeDocument {
         for(var f:group)tag(f,tag);
         repeat(group,repetitions);
     }
+    public void setRepeatedQuantity(List<Field> group,int repetitions){repeat(group,repetitions);}
     private void repeat(List<Field> group,int repetitions){
         if(group.isEmpty() || repetitions<1 || repetitions>64)throw new IllegalArgumentException("vjrm.error.amount");
         for(var f:group)if(f.path().size()!=2 || !f.path().getFirst().equals("ingredients") || f.fluid() || f.output())throw new IllegalArgumentException("vjrm.error.ingredient");
@@ -298,7 +329,7 @@ public final class RecipeDocument {
         }else{
             if(!f.output()||itemPredicate(f)){
                 var ingredient=Ingredient.CODEC.parse(ops,leaf).result();
-                if(ingredient.isPresent()){int count=quantity;return ingredient.get().items().map(h->new ItemStack(h,count)).toList();}
+                if(ingredient.isPresent()){int count=quantity;return ingredient.get().display().resolveForStacks(new net.minecraft.util.context.ContextMap.Builder().withParameter(net.minecraft.world.item.crafting.display.SlotDisplayContext.REGISTRIES,registries).create(net.minecraft.world.item.crafting.display.SlotDisplayContext.CONTEXT)).stream().map(stack->stack.copyWithCount(count)).toList();}
             }
             var stack=net.minecraft.world.item.ItemStackTemplate.CODEC.parse(ops,leaf).result();if(stack.isPresent())return List.of(stack.get().create());
             String id=leaf.isJsonPrimitive()?leaf.getAsString():leaf.isJsonObject()&&leaf.getAsJsonObject().has("item")?leaf.getAsJsonObject().get("item").getAsString():null;
@@ -311,11 +342,11 @@ public final class RecipeDocument {
         if(!f.chemical().isEmpty()){chemicalTag(f,tag,chemicalAmount(f));return;}
         if (f.output()&&!itemPredicate(f) || Identifier.tryParse(tag) == null) throw new IllegalArgumentException("vjrm.error.tag");
         JsonElement root=get(f).deepCopy(),leaf=atom(root);
-        if(leaf.isJsonPrimitive()||leaf.isJsonArray()){
+        if(leaf.isJsonPrimitive()||leaf.isJsonArray()||leaf.isJsonObject()&&leaf.getAsJsonObject().has("fabric:type")){
             if(root!=leaf)root.getAsJsonObject().addProperty("ingredient","#"+tag);else root=new JsonPrimitive("#"+tag);
             set(f,root);return;
         }
-        JsonObject o=leaf.isJsonObject()?leaf.getAsJsonObject():new JsonObject();o.remove("item");o.remove("id");o.remove("fluid");o.addProperty("tag",tag);
+        JsonObject o=f.fluid()?(leaf.isJsonObject()?leaf.getAsJsonObject():new JsonObject()):clearItemPredicate(leaf);o.remove("item");o.remove("id");o.remove("fluid");o.addProperty("tag",tag);
         if(f.fluid() && o.has("type") && Set.of("neoforge:single","neoforge:tag").contains(o.get("type").getAsString())){o.addProperty("type","neoforge:tag");o.remove("components");}
         if(root!=leaf)root.getAsJsonObject().add("ingredient",o);else root=o;
         set(f,root);
@@ -340,11 +371,11 @@ public final class RecipeDocument {
             json.getAsJsonArray("ingredients").remove(Integer.parseInt(f.path().getLast()));
         } else throw new IllegalArgumentException("vjrm.error.required");
     }
-    public void addCraftingInput(int gridIndex,ItemStack stack) {
-        addCraftingInput(gridIndex,stack,false);
+    public void addCraftingInput(int gridIndex,ItemStack stack,HolderLookup.Provider registries) {
+        addCraftingInput(gridIndex,stack,false,registries);
     }
-    public void addCraftingInput(int gridIndex,ItemStack stack,boolean emiGrid) {
-        JsonElement ingredient=new JsonPrimitive(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+    public void addCraftingInput(int gridIndex,ItemStack stack,boolean emiGrid,HolderLookup.Provider registries) {
+        JsonElement ingredient=itemIngredient(stack,registries);
         if(type().equals("minecraft:crafting_shapeless")) {
             var inputs=json.getAsJsonArray("ingredients");if(inputs.size()>=9)throw new IllegalArgumentException("vjrm.error.required");inputs.add(ingredient);return;
         }

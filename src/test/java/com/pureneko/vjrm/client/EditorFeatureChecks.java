@@ -12,6 +12,7 @@ final class EditorFeatureChecks {
     static void check(boolean value,String reason){if(!value)throw new AssertionError(reason);}
     static void run()throws Exception{
         ManualFieldChecks.run();
+        IngredientDataClientChecks.run();
         var mc=Minecraft.getInstance();var doc=RecipeDocument.template("smelting");
         var editor=new RecipeEditorScreen(doc,null,"vjrm:features",null);mc.setScreen(editor);
         check(((Button)field(editor,"fieldButton")).getY()+18<=(int)field(editor,"previewY"),"Field controls overlap or sit below recipe UI");

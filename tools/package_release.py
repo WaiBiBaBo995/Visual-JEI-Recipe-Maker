@@ -70,7 +70,7 @@ OUT.mkdir(exist_ok=True)
 target = OUT / f'{NAME}.jar'
 shutil.copy2(SOURCE, target)
 source_zip = OUT / f'{NAME}-sources.zip'
-files = [ROOT / name for name in ('.gitignore', 'build.gradle', 'gradle.properties', 'gradlew.bat', 'settings.gradle', 'README.md', 'CHANGELOG.md', 'COMPATIBILITY.md')]
+files = [ROOT / name for name in ('.gitignore', 'build.gradle', 'gradle.properties', 'gradlew.bat', 'settings.gradle', 'README.md', 'README.zh-CN.md', 'CHANGELOG.md', 'COMPATIBILITY.md')]
 for directory in ('src', 'gradle', 'tools', '.github'):
     files.extend(p for p in (ROOT / directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts)
 with zipfile.ZipFile(source_zip, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
