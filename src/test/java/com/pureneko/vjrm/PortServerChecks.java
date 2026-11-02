@@ -17,6 +17,8 @@ public final class PortServerChecks {
         Path output=Path.of("../../build/verification/server");Files.createDirectories(output);
         try{
             ItemPredicateChecks.run(registries);
+            IngredientDataChecks.run(registries);
+            IngredientDataChecks.export(server);
             FieldProfileChecks.run();
             for(String type:RecipeDocument.TYPES){
                 var doc=RecipeDocument.template(type);doc.decode(registries);
@@ -38,7 +40,7 @@ public final class PortServerChecks {
             check(shaped.matches(input,new ItemStack(Items.OAK_LOG),registries),"Compact tag did not match");
             shaped.accept(input,new ItemStack(Items.EMERALD),1,registries);shaped.decode(registries);
             check(shaped.get(input).getAsJsonObject().get("item").getAsString().equals("minecraft:emerald"),"Compact item replacement failed");
-            shaped.remove(input);shaped.addCraftingInput(0,new ItemStack(Items.DIAMOND));shaped.decode(registries);
+            shaped.remove(input);shaped.addCraftingInput(0,new ItemStack(Items.DIAMOND),registries);shaped.decode(registries);
             var alternate=RecipeDocument.template("smelting").json();
             alternate.add("ingredient",JsonParser.parseString("[{\"item\":\"minecraft:stone\"},{\"item\":\"minecraft:cobblestone\"}]"));
             var alt=new RecipeDocument(alternate);alt.decode(registries);
