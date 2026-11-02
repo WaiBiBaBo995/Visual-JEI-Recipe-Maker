@@ -296,7 +296,7 @@ public final class RecipeEditorScreen extends Screen {
     private void accept(Field field,Object ingredient,boolean editQuantity){
         try{long n=editQuantity?Long.parseLong(amount):field.path().get(0).equals("$crafting")?1:!field.chemical().isEmpty()?document.chemicalAmount(field):document.quantity(field);if(n<1)throw new IllegalArgumentException("vjrm.error.amount");var old=document.json();
             try{
-                if(field.path().get(0).equals("$crafting") && ingredient instanceof ItemStack item) {document.addCraftingInput(Integer.parseInt(field.path().get(field.path().size()-1)),item,layout!=null&&layout.usesEmiCraftingGrid());manualBindings.clear();}
+                if(field.path().get(0).equals("$crafting") && ingredient instanceof ItemStack item) {document.addCraftingInput(Integer.parseInt(field.path().get(field.path().size()-1)),item,layout!=null&&layout.usesEmiCraftingGrid(),minecraft.level.registryAccess());manualBindings.clear();}
                 else if(repeatedBindings.containsKey(field.label())){var group=repeatedBindings.get(field.label());document.acceptRepeated(group,ingredient,editQuantity?Math.toIntExact(n):group.size(),minecraft.level.registryAccess());manualBindings.clear();}
                 else document.accept(field,ingredient,n,minecraft.level.registryAccess());
                 document.decode(minecraft.level.registryAccess());
@@ -318,7 +318,20 @@ public final class RecipeEditorScreen extends Screen {
         }else if(value.startsWith("#")){var before=document.json();try{int n=Integer.parseInt(amount);if(repeatedBindings.containsKey(selected.label())){document.tagRepeated(repeatedBindings.get(selected.label()),value.substring(1),n);manualBindings.clear();}else document.tag(selected,value.substring(1),n);document.decode(minecraft.level.registryAccess());}catch(RuntimeException ex){document.replace(before);throw ex;}refresh();status=t("changed",selected.label());}
             else{var id=new ResourceLocation(value);if(selected.fluid()){
                 if(!net.minecraft.core.registries.BuiltInRegistries.FLUID.containsKey(id))throw new IllegalArgumentException(value);accept(selected,new FluidStack(net.minecraft.core.registries.BuiltInRegistries.FLUID.get(id),1),true);
-            }else{if(!net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(id))throw new IllegalArgumentException(value);accept(selected,new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(id)),true);}}
+            }else{
+                if(!net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(id))throw new IllegalArgumentException(value);
+                var current=document.values(selected,minecraft.level.registryAccess());
+                if(current.size()==1&&current.get(0) instanceof ItemStack previous&&net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(previous.getItem()).equals(id)){
+                    var before=document.json();
+                    try{
+                        int count=Integer.parseInt(amount);
+                        if(repeatedBindings.containsKey(selected.label())){document.setRepeatedQuantity(repeatedBindings.get(selected.label()),count);manualBindings.clear();}
+                        else document.setQuantity(selected,count);
+                        document.decode(minecraft.level.registryAccess());
+                    }catch(RuntimeException ex){document.replace(before);throw ex;}
+                    refresh();status=t("changed",selected.label());
+                }else accept(selected,new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(id)),true);
+            }}
         }catch(RuntimeException ex){status=t("error.invalid",ex.getMessage());}
     }
     private void reject(Component reason,double x,double y){

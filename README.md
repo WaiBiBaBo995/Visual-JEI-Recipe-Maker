@@ -1,18 +1,16 @@
-# Visual JEI Recipe Maker 1.0.3 -English-
+# Visual JEI Recipe Maker 1.0.4 -English-
 
-## New in 1.0.3
+## New in 1.0.4
 
-- Output predicates now accept tags and item IDs in their native ingredient format, including
-  Immersive Engineering 1.21.1 fields such as `results/0/basePredicate`.
-- Binding an inner predicate preserves and edits its enclosing quantity, while tag candidates
-  remain available for output previews and slot matching.
-- Ordinary item stack outputs retain their existing format and tag restrictions. The fix follows
-  each Minecraft version's ingredient representation, including compact strings on 26.1.2.
+- Preserve enchantments and custom item data when dragging ingredients, adding empty crafting slots, previewing, and exporting recipes.
+- Minecraft 1.20.1 uses native strict whole-NBT ingredients. Minecraft 1.21.1/26.1.2 matches each recorded component value exactly and allows additional component types; custom data is compared as a complete value.
+- Quantity-only edits preserve the original predicate. Replacing an item or switching to a tag rebuilds its conditions.
+- NeoForge 1.21.1 rejects ingredients with explicitly removed components and retains the previous recipe because its native format cannot express absence. Other component-era editions preserve removals. Exported recipes use the corresponding loader/API's native formats.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history and [COMPATIBILITY.md](COMPATIBILITY.md)
 for platform-specific integrations.
 
-This branch targets **Minecraft 1.20.1 / Forge**, version **1.0.3**.
+This branch targets **Minecraft 1.20.1 / Forge**, version **1.0.4**.
 
 ## GTCEu / KubeJS
 
@@ -24,7 +22,7 @@ The generated declaration uses `ServerEvents.recipes(event => { event.recipes["g
 
 Scripts are written relative to the client/server installation root at `kubejs/server_scripts/vjrm/<namespace>/<recipe-path>.js`. For example, `vjrm:chemical_reactor/test` maps to `kubejs/server_scripts/vjrm/vjrm/chemical_reactor/test.js`. Machine-type ID prefixes are normalized to avoid duplication. Server exports still check permissions, frequency, decoding, path scope, and explicit overwriting. Restart or reload KubeJS recipes to apply exported scripts. Ordinary recipes retain JSON/datapack export. See [COMPATIBILITY.md](COMPATIBILITY.md).
 
-Minecraft 1.20.1 Forge edition, version **1.0.3**. Requires Java 17 and Forge 47.1.1+. On the client, install JEI 15.74.0.225 or EMI 1.1.24+1.20.1, or both. This branch is an independent project; NeoForge 1.21.1 is on `main`.
+Minecraft 1.20.1 Forge edition, version **1.0.4**. Requires Java 17 and Forge 47.1.1+. On the client, install JEI 15.74.0.225 or EMI 1.1.24+1.20.1, or both. This branch is an independent project; NeoForge 1.21.1 is on `main`.
 
 ## Installation and Usage
 
@@ -108,20 +106,21 @@ Each branch is an independent project. Install the JAR matching both Minecraft a
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-Version **1.0.3** fixes item/tag output predicates and enclosing quantities while retaining native item/fluid text icons, recipe category icons, and gold binding tooltips. The player inventory label no longer includes the parenthetical explanation. Loader metadata contains the exact mod version `1.0.3`; artifact filenames may also identify Minecraft and the loader. See [CHANGELOG.md](CHANGELOG.md) for history.
+Version **1.0.4** preserves ingredient NBT/components and quantity-only edits. See [CHANGELOG.md](CHANGELOG.md) for history.
 
 
-# Visual JEI Recipe Maker 1.0.3 -中文-
+# Visual JEI Recipe Maker 1.0.4 -中文-
 
-## 1.0.3 更新
+## 1.0.4 更新
 
-- 支持标签的输出谓词可输入 `#标签` 或物品 ID，按原生材料格式写入，包含沉浸工程 1.21.1 的 `results/0/basePredicate`。
-- 绑定内部谓词时保留并修改外层数量；输出标签可正确解析预览候选和匹配槽位。
-- 普通物品堆栈输出保留原有格式与标签限制；各 Minecraft 版本使用各自材料表示，26.1.2 保留字符串格式。
+- 修复拖入带附魔、自定义数据的原料后数据丢失，覆盖空合成槽添加、预览和配方导出。
+- Minecraft 1.20.1 使用原生严格 NBT 材料，整份 NBT 必须相同。1.21.1／26.1.2 要求记录的各组件值相同，允许额外组件类型；自定义数据按完整值比较。
+- 仅修改数量保留原条件，替换物品或改用标签时重建条件。
+- NeoForge 1.21.1 的原生格式不能表达组件缺失，遇到显式删除组件的原料时拒绝修改并保留原配方；其他组件版本保留删除条件。导出配方使用对应加载器／API 的原生材料格式。
 
 完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-当前分支适用于 **Minecraft 1.20.1 / Forge 1.0.3**。
+当前分支适用于 **Minecraft 1.20.1 / Forge 1.0.4**。
 
 ## GTCEu / KubeJS
 
@@ -129,7 +128,7 @@ Version **1.0.3** fixes item/tag output predicates and enclosing quantities whil
 
 GT 页使用「编辑 JS」「JS 字段」「添加输入」「添加输出」及两个脚本导出按钮。生成的 `merge` 声明保留完整配方数据，编辑回填仅解析声明，不执行 JS。脚本写入客户端或服务端安装根目录的 `kubejs/server_scripts/vjrm/<命名空间>/<配方路径>.js`；重启或重载 KubeJS 配方后生效。普通配方仍使用 JSON 和数据包导出。安装、操作、路径及权限细节见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-1.0.3 的 Minecraft 1.20.1 Forge 移植版。Java 17，Forge 47.1.1+；客户端安装 JEI 15.74.0.225 或 EMI 1.1.24+1.20.1，任选一个，也可以同时安装。此分支为独立工程，1.21.1 NeoForge 工程位于 `main` 分支。
+1.0.4 的 Minecraft 1.20.1 Forge 移植版。Java 17，Forge 47.1.1+；客户端安装 JEI 15.74.0.225 或 EMI 1.1.24+1.20.1，任选一个，也可以同时安装。此分支为独立工程，1.21.1 NeoForge 工程位于 `main` 分支。
 
 ## 安装与使用
 
@@ -207,7 +206,7 @@ EMI 客户端验证会关闭配方装饰器，从真实配方页点击书本按�
 
 本次 GTCEu / Thaumaturge 兼容的具体用法见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-1.0.3：JSON 编辑页显示已识别物品/流体字符串的原生图标；配方类型检索显示类别图标。图标不改变草稿或剪贴板文本。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+1.0.4：修复原料 NBT／组件丢失，仅修改数量时保留原条件。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 版本与分支
 

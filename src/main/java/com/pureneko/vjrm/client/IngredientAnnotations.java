@@ -12,7 +12,7 @@ import java.util.*;
 final class IngredientAnnotations {
     record Icon(int end,Object ingredient) { }
     private record StringValue(List<String> path,int end,String value) { }
-    private static final Set<String> INGREDIENT_KEYS=Set.of("ingredient","ingredients","item","items","fluid","fluids","id","tag","value","values","content","children");
+    private static final Set<String> INGREDIENT_KEYS=Set.of("ingredient","ingredients","item","fluid","fluids","id","tag","value","values","content","children","base","items");
 
     static List<Icon> read(String source,JsonObject json,int offset,List<RecipeDocument.Field> manual){
         var mc=Minecraft.getInstance();if(mc.level==null)return List.of();
