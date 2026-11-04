@@ -60,7 +60,7 @@ public final class VjrmJeiPlugin implements IModPlugin {
                             var mc = Minecraft.getInstance();
                             var parent=mc.screen;
                             RecipeSources.request(id,document->{
-                                if(mc.screen==parent) mc.setScreen(new RecipeEditorScreen(document,PREVIEW.category(layout.getRecipeCategory()),id+"_copy",parent,layout.getRecipe()));
+                                if(mc.screen==parent) mc.setScreen(new RecipeEditorScreen(document,PREVIEW.category(layout.getRecipeCategory()),id+"_copy",parent,layout.getRecipe()).sourceRecipe(id.toString()));
                             },error->{if(mc.player!=null)mc.player.sendSystemMessage(Component.translatable("vjrm.error.copy",Component.translatable(error)));});
                         });
                         return true;

@@ -10,6 +10,7 @@ import java.util.*;
 
 public final class RecipeNetwork {
     public static final com.pureneko.vjrm.platform.ConfigValue<Integer> PERMISSION=new com.pureneko.vjrm.platform.ConfigValue<>("vjrm-server.json","exportPermissionLevel",2);
+    public static final com.pureneko.vjrm.platform.ConfigValue<Integer> BACKUP_RETENTION_DAYS=new com.pureneko.vjrm.platform.ConfigValue<>("vjrm-server.json","backupRetentionDays",0,-1,36500);
     private static final Map<UUID,Long> LAST_EXPORT=new HashMap<>();
     public record ExportRequest(String id,String json,boolean overwrite) {
         public void encode(FriendlyByteBuf b){b.writeUtf(id,200);b.writeUtf(json,24000);b.writeBoolean(overwrite);}
@@ -29,8 +30,10 @@ public final class RecipeNetwork {
             long now=System.currentTimeMillis();Long previous=LAST_EXPORT.put(player.getUUID(),now);
             if(previous!=null&&now-previous<1000)return new ExportResult(false,"rate");
             var id=Identifier.parse(request.id());var document=new RecipeDocument(JsonParser.parseString(request.json()).getAsJsonObject());document.decode(player.level().getServer().registryAccess());
-            var root=DatapackExporter.serverDatapackRoot(player.level().getServer(),"vjrm_generated").toAbsolutePath();DatapackExporter.writePackMeta(root);
-            DatapackExporter.export(root,id.getNamespace(),id.getPath(),document.json(),request.overwrite());return new ExportResult(true,id.toString());
+            var server=player.level().getServer();
+            DatapackManagementNetwork.store(server).save("vjrm_generated",id,document.json(),request.overwrite(),false,DatapackManagementNetwork.source(server,id));
+            DatapackManagementNetwork.prioritize(server);
+            return new ExportResult(true,id.toString());
         }catch(Exception ex){com.mojang.logging.LogUtils.getLogger().warn("Failed to export recipe {}",request.id(),ex);String detail=ex.getMessage()==null?ex.getClass().getSimpleName():ex.getMessage();return new ExportResult(false,detail.substring(0,Math.min(2000,detail.length())));}
     }
 }
