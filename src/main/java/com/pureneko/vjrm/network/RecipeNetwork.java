@@ -14,6 +14,7 @@ import java.util.*;
 public final class RecipeNetwork {
     private static final ForgeConfigSpec.Builder BUILDER=new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec.IntValue PERMISSION=BUILDER.defineInRange("exportPermissionLevel",2,0,4);
+    public static final ForgeConfigSpec.IntValue BACKUP_RETENTION_DAYS=BUILDER.comment("Deleted world-pack backup retention: 0 = clear on world exit/startup; positive = days; -1 = keep.").defineInRange("backupRetentionDays",0,-1,36500);
     public static final ForgeConfigSpec SPEC=BUILDER.build();
     public static final SimpleChannel CHANNEL=NetworkRegistry.ChannelBuilder.named(new ResourceLocation("vjrm","main"))
         .networkProtocolVersion(()->"1")
@@ -31,7 +32,7 @@ public final class RecipeNetwork {
     public static void register(){
         CHANNEL.messageBuilder(ExportRequest.class,0,NetworkDirection.PLAY_TO_SERVER).encoder(ExportRequest::encode).decoder(ExportRequest::decode).consumerMainThread((p,c)->handleExport(p,c.get())).add();
         CHANNEL.messageBuilder(ExportResult.class,1,NetworkDirection.PLAY_TO_CLIENT).encoder(ExportResult::encode).decoder(ExportResult::decode).consumerMainThread((p,c)->com.pureneko.vjrm.client.ExportResultHandler.handle(p)).add();
-        RecipeSourceNetwork.register();
+        RecipeSourceNetwork.register();DatapackManagementNetwork.register();
     }
     public static boolean exportFits(String json){return json.length()<=24000&&json.getBytes(java.nio.charset.StandardCharsets.UTF_8).length<=30000;}
     public static void sendToServer(Object message){CHANNEL.sendToServer(message);}
@@ -56,8 +57,10 @@ public final class RecipeNetwork {
                 return new ExportResult(true,id.toString());
             }
             var document=new RecipeDocument(submitted);document.decode(player.server.registryAccess(),id);
-            var root=DatapackExporter.serverDatapackRoot(player.server,"vjrm_generated").toAbsolutePath();DatapackExporter.writePackMeta(root);
-            DatapackExporter.export(root,id.getNamespace(),id.getPath(),document.json(),request.overwrite());return new ExportResult(true,id.toString());
+            var server=player.level().getServer();
+            DatapackManagementNetwork.store(server).save("vjrm_generated",id,document.json(),request.overwrite(),false,DatapackManagementNetwork.source(server,id));
+            DatapackManagementNetwork.prioritize(server);
+            return new ExportResult(true,id.toString());
         }catch(Exception ex){com.mojang.logging.LogUtils.getLogger().warn("Failed to export recipe {}",request.id(),ex);String detail=ex.getMessage()==null?ex.getClass().getSimpleName():ex.getMessage();return new ExportResult(false,detail.substring(0,Math.min(2000,detail.length())));}
     }
 }

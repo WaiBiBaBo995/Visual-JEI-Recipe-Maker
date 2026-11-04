@@ -222,7 +222,7 @@ public final class VjrmEmiPlugin implements EmiPlugin, RecipePreview.Provider {
             var id=sourceId(recipe);if(id==null)return false;
             var mc=Minecraft.getInstance();var parent=mc.screen;
             mc.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK,1f));
-            RecipeSources.request(id,document->{if(mc.screen==parent)mc.setScreen(new RecipeEditorScreen(document,RecipePreview.category(recipe.getCategory()),id+"_copy",parent,recipe));},error->{if(mc.player!=null)mc.player.displayClientMessage(Component.translatable("vjrm.error.copy",Component.translatable(error)),false);});return true;
+            RecipeSources.request(id,document->{if(mc.screen==parent)mc.setScreen(new RecipeEditorScreen(document,RecipePreview.category(recipe.getCategory()),id+"_copy",parent,recipe).sourceRecipe(id.toString()));},error->{if(mc.player!=null)mc.player.displayClientMessage(Component.translatable("vjrm.error.copy",Component.translatable(error)),false);});return true;
         }
     }
 }

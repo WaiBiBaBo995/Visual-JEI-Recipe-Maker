@@ -16,7 +16,7 @@ public final class PortRecipeChecks {
     private static void check(boolean value,String reason){if(!value)throw new AssertionError(reason);}
     @GameTest(template="empty",timeoutTicks=200)
     public static void recipes(GameTestHelper helper)throws Exception{
-        var registries=helper.getLevel().registryAccess();int checks=ItemPredicateChecks.run(registries)+FieldProfileChecks.run();
+        var registries=helper.getLevel().registryAccess();int checks=ItemPredicateChecks.run(registries)+FieldProfileChecks.run()+DatapackManagementChecks.run();
         IngredientDataChecks.run(registries);
         IngredientDataChecks.export(helper.getLevel().getServer());
 

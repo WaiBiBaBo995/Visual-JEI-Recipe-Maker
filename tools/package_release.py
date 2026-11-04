@@ -30,12 +30,15 @@ with zipfile.ZipFile(SOURCE) as jar:
     assert classes and all(struct.unpack('>H', jar.read(n)[6:8])[0] == MAJOR for n in classes), 'Incorrect Java target'
     assert not any('Checks' in n or 'Verification' in n or 'TestMachine' in n or 'PortClientEntrypoint' in n or 'PortCheckEntrypoint' in n for n in names), 'Test fixtures in release'
     assert not any(n.startswith(('mezz/', 'dev/emi/', 'mekanism/', 'data/vjrm/')) for n in names), 'Third-party code or test recipes in release'
-    for required in ('RecipeEditorScreen', 'JsonDraftScreen', 'ManualFieldScreen', 'NumericFieldsScreen', 'IngredientAnnotations', 'AnnotatedTextLayout'):
+    for required in ('RecipeEditorScreen', 'JsonDraftScreen', 'ManualFieldScreen', 'NumericFieldsScreen', 'IngredientAnnotations', 'AnnotatedTextLayout', 'DatapackManagementScreen', 'DatapackNameScreen', 'DatapackNameBox', 'DatapackConflictScreen', 'DatapackManagementClient'):
         assert f'com/pureneko/vjrm/client/{required}.class' in names, f'Missing {required}'
+    for required in ('export/ManagedDatapacks', 'export/DatapackOperations', 'network/DatapackManagementNetwork'):
+        assert f'com/pureneko/vjrm/{required}.class' in names, f'Missing {required}'
     for lang, label in {'en_us':'Player inventory', 'zh_cn':'玩家物品栏', 'zh_tw':'玩家物品欄'}.items():
         data = json.loads(jar.read(f'assets/vjrm/lang/{lang}.json'))
         assert data['vjrm.inventory'] == label, (lang, data['vjrm.inventory'])
         assert 'vjrm.json.copy' in data and 'vjrm.bound' in data
+        assert 'vjrm.manage.view.entries' in data and 'vjrm.manage.disable_question' in data
     manifest = jar.read('META-INF/MANIFEST.MF').decode('utf-8')
     assert f'Implementation-Version: {VERSION}' in manifest
     if LOADER == 'fabric':

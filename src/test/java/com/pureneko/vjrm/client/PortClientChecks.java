@@ -52,6 +52,7 @@ public final class PortClientChecks {
         if(Boolean.getBoolean("vjrm.verifyIcons")||Boolean.getBoolean("vjrm.verifyGt")||!Boolean.getBoolean("vjrm.verifyClient")||done||event.phase!=TickEvent.Phase.END||stage<5||++frames<20)return;
         try{
             Files.createDirectories(OUT);
+            if(stage==105){if(DatapackUiChecks.frame(OUT))finish();return;}
             if(stage==9){if((boolean)Class.forName("com.pureneko.vjrm.client.EmiCopyChecks").getMethod("rendered",Path.class).invoke(null,OUT))finish();return;}
             if(stage==10){var checks=Class.forName("com.pureneko.vjrm.client.RawRecipeCopyChecks");var method=checks.getDeclaredMethod("rendered",Path.class);method.setAccessible(true);if((boolean)method.invoke(null,OUT))finish();return;}
             if(stage==5){capture("forge-editor.png");viewerReady=false;
@@ -69,6 +70,6 @@ public final class PortClientChecks {
         }catch(Throwable ex){fail(ex);}
     }
     private static void capture(String name)throws Exception{try(var image=Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())){image.writeToFile(OUT.resolve(name));}}
-    private static void finish()throws Exception{Files.writeString(OUT.resolve("result.txt"),"PASS: Forge 1.20.1 "+System.getProperty("vjrm.viewer")+", centered editor, source/catalog network, server/client export, raw metadata, numeric/JSON editor, source names, slot tooltips and production EMI copy button\n");done=true;Minecraft.getInstance().stop();}
+    private static void finish()throws Exception{if(stage!=105){stage=105;return;}Files.writeString(OUT.resolve("result.txt"),"PASS: Forge 1.20.1 "+System.getProperty("vjrm.viewer")+", centered editor, source/catalog network, server/client export, raw metadata, numeric/JSON editor, source names, slot tooltips and production EMI copy button\n");done=true;Minecraft.getInstance().stop();}
     public static void fail(Throwable ex){ex.printStackTrace();done=true;try{Files.createDirectories(OUT);capture("failure.png");Files.writeString(OUT.resolve("result.txt"),"FAIL: "+ex);}catch(Exception ignored){}Minecraft.getInstance().stop();}
 }

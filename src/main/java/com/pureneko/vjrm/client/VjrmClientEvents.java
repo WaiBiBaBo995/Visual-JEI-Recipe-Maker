@@ -8,13 +8,19 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
 @EventBusSubscriber(modid = "vjrm", value = Dist.CLIENT)
 public final class VjrmClientEvents {
-    private static boolean toggleHeld;
+    private static boolean toggleHeld,cleanedLocal;
     @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
         if(event.phase!=TickEvent.Phase.END)return;
-        RecipeSources.tick();
+        RecipeSources.tick();DatapackManagementClient.tick();
+            if(!cleanedLocal&&Minecraft.getInstance().level!=null){cleanedLocal=true;cleanLocal();}
         while (VjrmKeybinds.OPEN.consumeClick()) if(Minecraft.getInstance().level!=null) Minecraft.getInstance().setScreen(new RecipeEditorScreen());
         while (VjrmKeybinds.COPY_BUTTON.consumeClick()) toggle();
     }
+    private static void cleanLocal(){
+        try{DatapackManagementClient.local().cleanup(VjrmClientConfig.BACKUP_RETENTION_DAYS.get());}
+        catch(Exception ex){com.mojang.logging.LogUtils.getLogger().error("Failed to clean local VJRM backups",ex);}
+    }
+    @SubscribeEvent public static void shuttingDown(net.minecraftforge.event.GameShuttingDownEvent e){cleanLocal();}
     private static void toggle(){
         VjrmClientConfig.toggle();var player=Minecraft.getInstance().player;
         if(player!=null)player.displayClientMessage(net.minecraft.network.chat.Component.translatable(VjrmClientConfig.copyButton()?"vjrm.copy_button.on":"vjrm.copy_button.off"),true);
