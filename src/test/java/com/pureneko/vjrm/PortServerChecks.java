@@ -21,6 +21,7 @@ public final class PortServerChecks {
         var server=event.getServer();var registries=server.registryAccess();
         Path output=Path.of("../../build/verification/server");Files.createDirectories(output);
         try{
+            DatapackManagementChecks.run();
             FieldProfileChecks.run();
             ItemPredicateChecks.run(registries);
             IngredientDataChecks.run(registries);
