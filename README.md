@@ -1,6 +1,9 @@
-# Visual JEI Recipe Maker 1.0.4 -English-
+# Visual JEI Recipe Maker 1.0.5 -English-
 
-## New in 1.0.4
+## New in 1.0.5
+
+- Manage local/world packs, disable original JSON recipes, and double-click recipe entries to edit saved JSON.
+- Use pack-name completion, rename/move/restore dialogs, ZIP exports and configurable backup retention.
 
 - Preserve enchantments and custom item data when dragging ingredients, adding empty crafting slots, previewing, and exporting recipes.
 - Minecraft 1.20.1 uses native strict whole-NBT ingredients. Minecraft 1.21.1/26.1.2 matches each recorded component value exactly and allows additional component types; custom data is compared as a complete value.
@@ -10,7 +13,7 @@
 See [CHANGELOG.md](CHANGELOG.md) for the full history and [COMPATIBILITY.md](COMPATIBILITY.md)
 for platform-specific integrations.
 
-This branch targets **Minecraft 1.21.1 / Fabric**, version **1.0.4**.
+This branch targets **Minecraft 1.21.1 / Fabric**, version **1.0.5**.
 
 ## Installation
 
@@ -84,12 +87,14 @@ Each branch is an independent project. Install the JAR matching both Minecraft a
 | 26.1.2 | Fabric | [fabric-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/fabric-26.1.2) | 25 |
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
-Version **1.0.4** preserves ingredient NBT/components and quantity-only edits. See [CHANGELOG.md](CHANGELOG.md) for history.
+Version **1.0.5** preserves ingredient NBT/components and quantity-only edits. See [CHANGELOG.md](CHANGELOG.md) for history.
 
+# Visual JEI Recipe Maker 1.0.5 -中文-
 
-# Visual JEI Recipe Maker 1.0.4 -中文-
+## 1.0.5 更新
 
-## 1.0.4 更新
+- 同步本地／世界数据包管理、原配方禁用与双击配方编辑。
+- 支持数据包名称补全、重命名／移动／恢复弹窗、ZIP 导出和备份保留配置。
 
 - 修复拖入带附魔、自定义数据的原料后数据丢失，覆盖空合成槽添加、预览和配方导出。
 - Minecraft 1.20.1 使用原生严格 NBT 材料，整份 NBT 必须相同。1.21.1／26.1.2 要求记录的各组件值相同，允许额外组件类型；自定义数据按完整值比较。
@@ -98,7 +103,7 @@ Version **1.0.4** preserves ingredient NBT/components and quantity-only edits. S
 
 完整历史见 [CHANGELOG.md](CHANGELOG.md)，平台限定的兼容功能见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-当前分支适用于 **Minecraft 1.21.1 / Fabric 1.0.4**。
+当前分支适用于 **Minecraft 1.21.1 / Fabric 1.0.5**。
 
 ## 安装组合
 
@@ -160,7 +165,6 @@ Fabric 配置使用 JSON：`config/vjrm-client.json` 的 `showJeiCopyButton`、`
 
 更新记录统一在 [CHANGELOG.md](CHANGELOG.md)。JEI 26.1 源码参考：[官方分支](https://github.com/mezz/JustEnoughItems/tree/26.1)。
 
-
 ## 版本与分支
 
 每个分支都是独立工程。请安装同时匹配 Minecraft 版本与加载器的 JAR。
@@ -175,3 +179,39 @@ Fabric 配置使用 JSON：`config/vjrm-client.json` 的 `showJeiCopyButton`、`
 | 26.1.2 | NeoForge | [neoforge-26.1.2](https://github.com/WaiBiBaBo995/Visual-JEI-Recipe-Maker/tree/neoforge-26.1.2) | 25 |
 
 各分支均为独立可构建工程，安装时匹配游戏版本与加载器。
+
+## Managing recipes and datapacks
+
+Choose **Manage packs** in the editor to switch between **Current world** and **Local exports**. Click a pack to select it for rename, deletion or export; double-click its name to open recipe entries. Double-click a recipe entry to edit the saved JSON, retaining its ID and pack; disabled entries must be restored first. Changing the ID saves a new recipe and keeps the original. The manager no longer creates packs or sets the export target. Exporting from the editor creates a named pack when needed. Rename, move and restore use dedicated name dialogs that preserve input on validation errors; moving to a missing pack confirms its creation. Back and Esc return from entries/backups to the pack list, then to the editor. Enter the target name beside the editor's overwrite toggle. It initially contains `vjrm_generated`; an empty field shows a name hint and must be filled before export/disable. Prefix suggestions merge local and current-world packs with source labels; use the mouse, arrow keys, Tab to accept and Esc to dismiss. Existing `vjrm_generated` packs remain supported.
+
+JEI/EMI copies retain their original recipe IDs. The editor's **Disable recipe** button opens confirmation directly, showing the source recipe ID and entered target pack, without searching a manager catalog. Cancel or completion returns to the editor. Disable rules are written to that pack in the current world. Removing an override or disable entry restores the upstream recipe after `/reload`; upstream files stay intact and original JSON is not backed up. Cross-pack ID conflicts still require an explicit choice to replace the existing entry or move it into the target pack.
+
+World management is server-authoritative and uses `exportPermissionLevel` (OP2 by default). Players must run `/reload` themselves after changes. VJRM attempts to select its packs at higher priority and reports if this cannot be ensured; check `/datapack list` when prompted. Fabric resource conditions disable JSON recipes only when above the source pack. Recipes injected later by scripts or mod code are outside this feature; GTCEu KubeJS exports keep their existing workflow.
+
+**Export ZIP** packages the complete pack and downloads it to the client's `vjrm_exports/exports/<name>.zip`, including recipes, disable rules and management metadata. It does not install the ZIP into a world.
+
+Deleting a pack confirms its name and counts before moving it to **Deleted packs**. Restore under an available name; restoration refuses name and recipe-ID conflicts. Permanent backup deletion requires another confirmation. `backupRetentionDays` controls retention separately for local exports and world packs:
+
+- `0` (default): clean on client/world-server shutdown, with startup cleanup after an abnormal exit.
+- Positive: retain that many days; clean expired backups at startup and shutdown.
+- `-1`: retain until manually purged.
+
+Local settings live in `config/vjrm-client.json`, with backups in `config/vjrm/backups`. World backups live in `<world>/data/vjrm/backups`; retention uses `config/vjrm-server.json` in the server installation. A remote player disconnect does not clean server backups; the server must stop. Cleanup never removes active packs.
+
+## 配方与数据包管理
+
+编辑器内点击「管理数据包」，在「当前世界」与「本地导出」之间切换。单击选中数据包可重命名、删除、导出；双击包名打开配方列表，编辑、移除或移动配方。双击配方条目可直接编辑保存的 JSON，保留原 ID 和包名；禁用条目需先恢复。修改 ID 导出会另存新配方并保留原条目。管理器不再提供新建包或设置导出目标；新包在编辑器导出时按填写的名称自动创建。重命名、移动和备份恢复均在独立弹窗中输入名称，校验失败保留输入；移动目标不存在时会提示确认创建。返回键与 Esc 从包内或备份页面返回包列表，再返回编辑器。编辑器覆盖开关右侧可填写目标包名，首次预填 `vjrm_generated`，清空后提示「数据包名称」并要求填写。输入时按前缀补全本地和当前世界已有包名，标注来源，支持鼠标、↑↓选择、Tab 接受和 Esc 收起。原有的 `vjrm_generated` 包继续可用。
+
+JEI/EMI 复制的配方保留原始 ID，点击编辑器的「禁用配方」会直接弹出确认页，显示原始配方 ID 与当前填写的目标包，不再进入管理器搜索。取消或完成后返回编辑器。禁用规则写入当前世界的目标包；移除覆盖／禁用条目并执行 `/reload` 后恢复上游配方，不修改上游文件，也不另备份原始 JSON。跨包同 ID 冲突仍需明确选择替换原包条目或移动到目标包。
+
+世界管理沿用 `exportPermissionLevel`（默认 OP2），所有文件操作由服务器校验。保存后仍需玩家自行执行 `/reload`。VJRM 会尝试将管理包选入较高优先级；如界面提示优先级未能保证，请检查 `/datapack list`。禁用通过 Fabric 的同 ID 条件覆盖生效，要求高于配方来源包；不处理脚本或模组代码在运行时注入的配方。GTCEu KubeJS 脚本继续走原有入口。
+
+「重新导出」会将整个包打包为 ZIP，并下载到客户端的 `vjrm_exports/exports/<包名>.zip`，包含配方、禁用规则和管理标记。该操作不会自动将 ZIP 安装进世界。
+
+删除包需确认包名、配方数与禁用规则数，然后移入「已删除包」。恢复时填写目标包名，不覆盖同名包或制造跨包配方冲突；「永久删除」需再次确认。备份保留由 `backupRetentionDays` 控制：
+
+- `0`（默认）：关闭客户端／对应世界服务器时清理，异常退出遗留备份在下次启动补清理。
+- 正数：保留相应天数，在启动与关闭时清理过期备份。
+- `-1`：保留到手动永久删除。
+
+本地配置位于 `config/vjrm-client.json`，本地备份在 `config/vjrm/backups`；世界备份在 `<世界>/data/vjrm/backups`，保留配置沿用 Fabric 的 `vjrm-server.json`（位于游戏 `config` 目录）。远程玩家退出不会清理服务器备份，独立服务器停止时才处理。备份清理不删除现存数据包。

@@ -8,7 +8,9 @@ public final class ClientNetworking {
         else if(packet instanceof RecipeSourceNetwork.Response p)RecipeSources.receive(p);
         else if(packet instanceof RecipeSourceNetwork.Catalog p)RecipeSources.receive(p);
     }
-    public static void register(){ClientPlayNetworking.registerGlobalReceiver(VjrmNetworking.Envelope.TYPE,(p,c)->c.client().execute(()->receive(p.packet())));}
+    public static void register(){
+        ClientPlayNetworking.registerGlobalReceiver(DatapackManagementNetwork.ResponsePayload.TYPE,(p,c)->c.client().execute(()->DatapackManagementClient.receive(p.packet())));
+ClientPlayNetworking.registerGlobalReceiver(VjrmNetworking.Envelope.TYPE,(p,c)->c.client().execute(()->receive(p.packet())));}
     public static boolean available(){return ClientPlayNetworking.canSend(VjrmNetworking.Envelope.TYPE);}
     public static void send(Object p){ClientPlayNetworking.send(new VjrmNetworking.Envelope(p));}
 }

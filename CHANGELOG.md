@@ -1,5 +1,13 @@
 # Changelog -English-
 
+## 1.0.5 — 2026-11-04
+
+- Manage generated local and world datapacks: browse recipes, edit, move, rename, delete with configurable backup retention, restore and download complete ZIP exports. Original mod/vanilla JSON remains untouched.
+- Disable JSON recipes through the loader's native conditional overrides, using the original source ID and server-authoritative permissions. Players apply changes with `/reload`.
+- Double-click a pack to browse its entries and double-click a recipe entry to edit its saved JSON. Keep its ID, target pack and source metadata; disabled entries require restoring first. Changed IDs create a separate recipe.
+- Simplify manager navigation, use name dialogs for rename/move/restore, and suggest existing local/world names in the editor. New editors start with `vjrm_generated`; missing export packs are created when saving.
+- Synchronize these features, all three translations, metadata and CI artifact versions across all six maintained Minecraft/loader editions.
+
 ## 1.0.4 — 2026-11-02
 
 - Preserve enchantments and custom item data when dragging ingredients, adding empty crafting slots, previewing, and exporting recipes.
@@ -144,6 +152,14 @@ Historical installation: replace old VJRM with the matching 0.5.0 JAR and instal
 Historical test results describe the corresponding releases; they are not new runtime verification of 1.0.3.
 
 # 更新记录 -中文-
+
+## 1.0.5 — 2026-11-04
+
+- 添加本地与世界数据包管理：浏览、编辑、移动配方，重命名、删除、备份恢复与完整 ZIP 下载；备份保留天数可配置。原版与模组内的原始 JSON 不修改、不备份。
+- 通过各加载器原生条件覆盖禁用 JSON 配方，沿用原配方 ID 和服务器权限校验；修改后由玩家自行执行 `/reload`。
+- 双击数据包进入配方列表，双击配方条目编辑保存的 JSON，保留 ID、目标包和来源信息；禁用条目提示先恢复。修改 ID 导出时另存新配方并保留旧条目。
+- 精简管理器导航，重命名、移动、恢复改为输入弹窗；编辑器提供本地与世界数据包名称补全，默认名称 `vjrm_generated`，导出时按需创建数据包。
+- 六个维护版本同步上述功能、三语言、加载器元数据与 CI 产物版本号，统一升级为 1.0.5。
 
 ## 1.0.4 — 2026-11-02
 
