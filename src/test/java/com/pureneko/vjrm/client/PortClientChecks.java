@@ -120,6 +120,7 @@ public final class PortClientChecks {
                 var path=com.pureneko.vjrm.export.DatapackExporter.serverDatapackRoot(server,"vjrm_generated").resolve("data/vjrm/recipes/"+EXPORT_ID.substring(5)+".json");
                 if(!Files.exists(path))return;
                 new RecipeDocument(com.google.gson.JsonParser.parseString(Files.readString(path)).getAsJsonObject()).decode(mc.level.registryAccess());
+                if(!DatapackUiChecks.frame(OUTPUT))return;
                 Files.createDirectories(OUTPUT);Files.writeString(OUTPUT.resolve("result.txt"),"PASS: source request/catalog/export network; JEI native UI, sidebar, raw recipe ID fallback and actual copy button; 2 sizes centered; typed drag without inventory consumption; numeric apply/rollback; tooltips; JSON completion, indentation, format, copy; manual field picker and binding; render screenshots\n");
                 Files.copy(OUTPUT.resolve("result.txt"),OUTPUT.resolve("result-jei.txt"),StandardCopyOption.REPLACE_EXISTING);
                 System.out.println("PASS VJRM fabric-1.20.1 CLIENT CHECKS");done=true;mc.stop();

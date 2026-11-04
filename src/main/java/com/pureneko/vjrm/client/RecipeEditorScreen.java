@@ -93,6 +93,10 @@ public final class RecipeEditorScreen extends Screen {
     private Field selected;
     private Slot selectedSlot;
     private EditBox idBox, valueBox, countBox;
+    private DatapackNameBox packBox;
+    private String targetPack="vjrm_generated",overrideSource="",sourceRecipeId="";
+    private int packSuggestionEpoch;
+    private boolean disabling;
     private Button fieldButton, overwriteButton, serverButton, clientButton;
     private String recipeId = "vjrm:my_recipe", value = "", amount = "1";
     private boolean overwrite;
@@ -109,6 +113,10 @@ public final class RecipeEditorScreen extends Screen {
     public RecipeEditorScreen(RecipeDocument document,Object preferred,String id,Screen parent,Object sourceDisplay){
         super(Component.translatable("screen.vjrm.editor"));this.document=document;this.preferred=RecipePreview.category(preferred);recipeId=id;this.parent=parent;this.sourceDisplay=sourceDisplay;sourceDocument=new RecipeDocument(document.json());
     }
+    public RecipeEditorScreen targetPack(String pack,boolean replace){return targetPack(pack,replace,"");}
+    public RecipeEditorScreen targetPack(String pack,boolean replace,String source){targetPack=pack;overwrite=replace;overrideSource=source;return this;}
+    public String overrideSource(){return overrideSource;}
+    public RecipeEditorScreen sourceRecipe(String id){sourceRecipeId=id;return this;}
     public int panelWidth() { return 322; }
     public int panelHeight() { return 414; }
     public int panelX() { return Math.round((width/uiScale-panelWidth())/2); }
@@ -134,6 +142,8 @@ public final class RecipeEditorScreen extends Screen {
         button(x+96,y+22,44,"numbers",b->minecraft.setScreen(new NumericFieldsScreen(this,document,()->{refresh();status=t("changed","JSON");})));
         typeButton.setTooltip(Tooltip.create(t("type.name",document.type())));
         idBox=addRenderableWidget(new EditBox(font,x+144,y+22,w-144,18,t("recipe_id")));idBox.setMaxLength(200);idBox.setValue(recipeId);idBox.setResponder(s->recipeId=s);idBox.setTooltip(Tooltip.create(t("recipe_id")));
+        button(x+w-82,y+40,82,"manage.open",b->minecraft.setScreen(new DatapackManagementScreen(this)));
+        if(!sourceRecipeId.isEmpty())button(x+w-158,y+40,74,"manage.disable",b->confirmDisable());
         fieldButton=button(x,y+60,w-128,"field",b->cycleField());
         button(x+w-124,y+60,60,"manual.open",b->openManualFields());
         button(x+w-60,y+60,60,"bind",b->bindSelected());
@@ -145,9 +155,58 @@ public final class RecipeEditorScreen extends Screen {
             boolean changedType=!document.type().equals(j.get("type").getAsString());document.replace(j);selected=null;manualBindings.clear();sourceBindings.clear();
             if(changedType){preferred=null;sourceDisplay=null;sourceDocument=new RecipeDocument(j);}
         })));
-        overwriteButton=button(x,c+66,w,"overwrite.off",b->{overwrite=!overwrite;overwriteButton.setMessage(t(overwrite?"overwrite.on":"overwrite.off"));});overwriteButton.setMessage(t(overwrite?"overwrite.on":"overwrite.off"));
+        overwriteButton=button(x,c+66,(w-4)/2,"overwrite.off",b->{overwrite=!overwrite;overwriteButton.setMessage(t(overwrite?"overwrite.on":"overwrite.off"));});overwriteButton.setMessage(t(overwrite?"overwrite.on":"overwrite.off"));
+        packBox=addRenderableWidget(new DatapackNameBox(font,x+(w-4)/2+4,c+66,w-(w-4)/2-4,18));
+        packBox.setMaxLength(64);packBox.setValue(targetPack);packBox.setHint(t("manage.name"));packBox.setResponder(s->{targetPack=s;packBox.changed();});packBox.setTooltip(Tooltip.create(t("manage.name")));
         serverButton=button(x,c+88,(w-4)/2,"export.server",b->export(false));clientButton=button(x+(w-4)/2+4,c+88,(w-4)/2,"export.client",b->export(true));
         refresh();RecipePreview.hooks().initialized(this);
+        loadPackSuggestions();
+    }
+    private void loadPackSuggestions(){
+        int epoch=++packSuggestionEpoch;
+        try{for(var pack:DatapackManagementClient.local().packs())packBox.addName(pack.name(),false);}
+        catch(Exception ex){packBox.setTooltip(Tooltip.create(t("manage.completion_local_error")));}
+        if(DatapackManagementClient.available())loadWorldPackSuggestions(0,epoch);
+    }
+    private void loadWorldPackSuggestions(int offset,int epoch){
+        DatapackManagementClient.request(this,true,"packs","",Integer.toString(offset),"","",false,response->{
+            if(epoch!=packSuggestionEpoch)return;
+            if(!response.success()){
+                packBox.setTooltip(Tooltip.create(t("manage.completion_world_error",DatapackManagementClient.error(response.detail()))));return;
+            }
+            var page=JsonParser.parseString(response.json()).getAsJsonObject();
+            for(var item:page.getAsJsonArray("items"))packBox.addName(item.getAsJsonObject().get("name").getAsString(),true);
+            int next=page.get("next").getAsInt();if(next>=0)loadWorldPackSuggestions(next,epoch);
+        });
+    }
+    private boolean validTargetPack(){
+        if(!com.pureneko.vjrm.export.ManagedDatapacks.validName(targetPack)){
+            status=t(targetPack.isBlank()?"manage.name_required":"manage.invalid_name");
+            setFocused(packBox);packBox.setFocused(true);return false;
+        }
+        return true;
+    }
+    private void confirmDisable(){
+        if(disabling||sourceRecipeId.isEmpty()||!validTargetPack())return;
+        String pack=targetPack,id=sourceRecipeId;packBox.dismiss();
+        minecraft.setScreen(new net.minecraft.client.gui.screens.ConfirmScreen(ok->{
+            minecraft.setScreen(this);if(ok)disableRecipe(pack,id,false);
+        },t("manage.disable_question"),t("manage.disable_details",id,pack).copy().append("\n\n").append(t("manage.disable_confirm"))));
+    }
+    private void disableRecipe(String pack,String id,boolean move){
+        disabling=true;status=t("manage.loading");
+        DatapackManagementClient.request(this,true,move?"disable_move":"disable",pack,"",id,"",true,response->{
+            disabling=false;
+            if(!response.success()){
+                if(response.detail().equals("conflict")){
+                    String owner=JsonParser.parseString(response.json()).getAsJsonObject().get("pack").getAsString();
+                    minecraft.setScreen(new DatapackConflictScreen(this,owner,()->disableRecipe(owner,id,false),()->disableRecipe(pack,id,true)));
+                }else status=t("error.invalid",DatapackManagementClient.error(response.detail()));
+                return;
+            }
+            var data=JsonParser.parseString(response.json()).getAsJsonObject();
+            status=t(data.has("priority")&&!data.get("priority").getAsBoolean()?"manage.priority_failed":"manage.reload_hint");
+        });
     }
     private List<Slot> drawSlots() {
         if(layout==null)return List.of();
@@ -350,12 +409,29 @@ public final class RecipeEditorScreen extends Screen {
     }
     private void export(boolean client){
         try{if(layout==null)throw new IllegalStateException("vjrm.error.layout");var id=new ResourceLocation(recipeId);document.decode(minecraft.level.registryAccess());var json=document.json();
-            if(client){var root=minecraft.gameDirectory.toPath().resolve("vjrm_exports/vjrm_generated").toAbsolutePath();DatapackExporter.writePackMeta(root);var file=DatapackExporter.export(root,id.getNamespace(),id.getPath(),json,overwrite);status=t("exported",file.toString());}
-            else{if(!RecipeNetwork.exportFits(json.toString()))throw new IllegalArgumentException("vjrm.error.size");RecipeNetwork.sendToServer(new RecipeNetwork.ExportRequest(recipeId,json.toString(),overwrite));status=t("sending");}
+            exportManaged(client,false);
         }catch(Exception ex){status=t("error.invalid",ex.getMessage());}
+    }
+    private void exportManaged(boolean client,boolean move){
+        if(!validTargetPack())return;
+        packBox.dismiss();
+        String id=recipeId,pack=targetPack,json=document.json().toString();
+        if(!client&&(json.length()>24000||json.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>24000)){status=t("error.size");return;}
+        DatapackManagementClient.request(this,!client,move?"save_move":"save",pack,"",id,json,overwrite,response->{
+            if(!response.success()){
+                if(response.detail().equals("conflict")){
+                    String owner=JsonParser.parseString(response.json()).getAsJsonObject().get("pack").getAsString();
+                    minecraft.setScreen(new DatapackConflictScreen(this,owner,()->{targetPack=owner;overwrite=true;exportManaged(client,false);},()->{overwrite=true;exportManaged(client,true);}));
+                }else status=t("error.invalid",DatapackManagementClient.error(response.detail()));
+                return;
+            }
+            var result=JsonParser.parseString(response.json()).getAsJsonObject();
+            status=t(result.has("priority")&&!result.get("priority").getAsBoolean()?"manage.priority_failed":"exported",pack+" / "+id);
+        });
     }
     public void exportResult(boolean success,String detail){status=t(success?"exported":"error.invalid",detail.equals("permission")||detail.equals("rate")?t("result."+detail):detail);}
     @Override public boolean mouseClicked(double x,double y,int button){
+        if(packBox!=null&&packBox.popupClick(x/uiScale,y/uiScale,button))return true;
         if(RecipePreview.hooks().mouseClicked(x,y,button))return true;
         x/=uiScale;y/=uiScale;
         if(button==0&&minecraft.player!=null){
@@ -388,8 +464,8 @@ public final class RecipeEditorScreen extends Screen {
         }
         return super.mouseReleased(x/uiScale,y/uiScale,button);
     }
-    @Override public boolean mouseScrolled(double x,double y,double dy){return RecipePreview.hooks().mouseScrolled(x,y,0,dy)||super.mouseScrolled(x/uiScale,y/uiScale,dy);}
-    @Override public boolean keyPressed(int key,int scan,int modifiers){return RecipePreview.hooks().keyPressed(key,scan,modifiers)||super.keyPressed(key,scan,modifiers);}
+    @Override public boolean mouseScrolled(double x,double y,double dy){return packBox!=null&&packBox.popupScroll(x/uiScale,y/uiScale,dy)||RecipePreview.hooks().mouseScrolled(x,y,0,dy)||super.mouseScrolled(x/uiScale,y/uiScale,dy);}
+    @Override public boolean keyPressed(int key,int scan,int modifiers){return packBox!=null&&packBox.popupKey(key)||RecipePreview.hooks().keyPressed(key,scan,modifiers)||super.keyPressed(key,scan,modifiers);}
     @Override public boolean charTyped(char character,int modifiers){return RecipePreview.hooks().charTyped(character,modifiers)||super.charTyped(character,modifiers);}
     @Override public void tick(){if(!RecipePreview.available()){layout=null;bindings.clear();}else if(layout!=null){layout.tick();if(usingSourceLayout)overrideSourceSlots();}}
     @Override public boolean isPauseScreen(){return false;}
@@ -402,7 +478,7 @@ public final class RecipeEditorScreen extends Screen {
         g.pose().pushPose();g.pose().scale(uiScale,uiScale,1);
         // Screen.render draws the background. Call it once, before the JEI layout.
         renderBackground(g);super.render(g,mx,my,pt);g.drawString(font,title,panelX()+8,panelY()+7,0xFFFFFF);
-        g.drawString(font,font.plainSubstrByWidth(sourceDescription().getString(),panelWidth()-16),panelX()+8,panelY()+45,proxyRecipe()?0xFFE3C483:0xFFCCCCCC);
+        g.drawString(font,font.plainSubstrByWidth(sourceDescription().getString(),sourceRecipeId.isEmpty()?panelWidth()-104:panelWidth()-184),panelX()+8,panelY()+45,proxyRecipe()?0xFFE3C483:0xFFCCCCCC);
         if(my>=panelY()+44&&my<panelY()+57&&mx>=panelX()&&mx<panelX()+panelWidth())g.renderTooltip(font,font.split(sourceDescription(),panelWidth()),mx,my);
         if(layout!=null){g.pose().pushPose();g.pose().translate(previewX,previewY,0);g.pose().scale(previewScale,previewScale,1);layout.drawRecipe(g,(int)((mx-previewX)/previewScale),(int)((my-previewY)/previewScale));g.pose().popPose();
             for(var s:drawSlots()){var r=screenRect(s);int color=s==selectedSlot?0xFFFFFF66:bindings.containsKey(s)?0xFF66AA88:0xFFCF9944;g.renderOutline(r.getX()-1,r.getY()-1,r.getWidth()+2,r.getHeight()+2,color);}
@@ -423,9 +499,10 @@ public final class RecipeEditorScreen extends Screen {
             g.pose().pushPose();g.pose().translate(0,0,300);g.renderItem(draggedInventory,mx-8,my-8);g.renderItemDecorations(font,draggedInventory,mx-8,my-8);g.pose().popPose();
         }
         if(clickReason!=null&&net.minecraft.Util.getMillis()<reasonUntil)g.renderTooltip(font,font.split(clickReason,Math.max(80,Math.min(280,(int)(width/uiScale)-24))),reasonX,reasonY);
+        if(packBox!=null)packBox.renderPopup(g,mx,my,panelX()+4,panelX()+panelWidth()-4);
         g.pose().popPose();
         RecipePreview.hooks().overlay(g,physicalX,physicalY,pt);
-        if(!inventoryDragging&&layout!=null&&(clickReason==null||net.minecraft.Util.getMillis()>=reasonUntil)){
+        if((packBox==null||!packBox.showing())&&!inventoryDragging&&layout!=null&&(clickReason==null||net.minecraft.Util.getMillis()>=reasonUntil)){
             for(var slot:drawSlots())if(screenRect(slot).contains(mx,my)){
                 var lines=new ArrayList<Component>(slot.tooltip());
                 var binding=bindings.get(slot);

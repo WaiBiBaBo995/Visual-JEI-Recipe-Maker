@@ -8,7 +8,11 @@ public final class ClientNetworking {
         else if(packet instanceof RecipeSourceNetwork.Response p)RecipeSources.receive(p);
         else if(packet instanceof RecipeSourceNetwork.Catalog p)RecipeSources.receive(p);
     }
-    public static void register(){ClientPlayNetworking.registerGlobalReceiver(VjrmNetworking.CHANNEL,(client,handler,buf,sender)->{Object p=VjrmNetworking.decode(buf);client.execute(()->receive(p));});}
+    public static void register(){
+        ClientPlayNetworking.registerGlobalReceiver(DatapackManagementNetwork.CHANNEL,(client,handler,buf,sender)->{
+            var response=DatapackManagementNetwork.Response.decode(buf);client.execute(()->DatapackManagementClient.receive(response));
+        });
+ClientPlayNetworking.registerGlobalReceiver(VjrmNetworking.CHANNEL,(client,handler,buf,sender)->{Object p=VjrmNetworking.decode(buf);client.execute(()->receive(p));});}
     public static boolean available(){return ClientPlayNetworking.canSend(VjrmNetworking.CHANNEL);}
     public static void send(Object p){var b=net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();VjrmNetworking.encode(p,b);ClientPlayNetworking.send(VjrmNetworking.CHANNEL,b);}
 }
