@@ -109,12 +109,15 @@ public final class ClientChecks {
             }else if(stage==9){
                 RawRecipeCopyChecks.start();stage=14;
             }else if(stage==15){
+                stage=16;
+            }else if(stage==17){
                 Files.createDirectories(OUTPUT);Files.writeString(OUTPUT.resolve("result.txt"),"PASS: source network, JEI sidebar, copy button visibility/persistence, 2 UI sizes, drag-only inventory without consumption, wrapped type catalog and edited preview, original fields preserved; real Create checks = "+Boolean.getBoolean("vjrm.verifyCreate")+"\n");
                 System.out.println("PASS VJRM CLIENT CHECKS");done=true;mc.stop();
             }
         }catch(Throwable ex){fail(ex);}
     }
     @SubscribeEvent public static void rendered(RenderFrameEvent.Post event){
+        if(Boolean.getBoolean("vjrm.verifyClient")&&!done&&stage==16){try{if(DatapackUiChecks.frame(OUTPUT))stage=17;}catch(Throwable ex){fail(ex);}return;}
         if(Boolean.getBoolean("vjrm.verifyClient")&&!done&&stage==14){try{if(RawRecipeCopyChecks.rendered(OUTPUT))stage=15;}catch(Throwable ex){fail(ex);}return;}
         if(!Boolean.getBoolean("vjrm.verifyClient")||done||capture==null)return;
         if(++frames<10)return;

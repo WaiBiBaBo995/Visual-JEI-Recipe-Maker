@@ -1,6 +1,6 @@
 # Visual JEI Recipe Maker
 
-[![Version](https://img.shields.io/badge/version-1.0.4-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.5-blue)](CHANGELOG.md)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-62b47a)](#installation)
 [![Loader](https://img.shields.io/badge/loader-NeoForge-orange)](#installation)
 
@@ -24,9 +24,10 @@ matching Forge and Fabric branches.
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
-- [What's new in 1.0.4](#whats-new-in-104)
+- [What's new in 1.0.5](#whats-new-in-105)
 - [Editing recipes](#editing-recipes)
 - [Exporting and applying recipes](#exporting-and-applying-recipes)
+- [Managing recipes and datapacks](#managing-recipes-and-datapacks)
 - [Compatibility and limits](#compatibility-and-limits)
 - [Troubleshooting](#troubleshooting)
 - [Other versions](#other-versions)
@@ -72,14 +73,29 @@ JEI `19.27.0.350` and EMI `1.1.24+1.21.1`.
 > In Controls → Visual JEI Recipe Maker, bind **Show/Hide JEI/EMI Recipe Copy Button**
 > (unbound by default), then use that key to toggle visibility.
 
-## What's new in 1.0.4
+## What's new in 1.0.5
 
-- Preserve enchantments and custom item data when dragging ingredients, adding empty crafting slots, previewing, and exporting recipes.
-- Minecraft 1.20.1 uses native strict whole-NBT ingredients. Minecraft 1.21.1/26.1.2 matches each recorded component value exactly and allows additional component types; custom data is compared as a complete value.
-- Quantity-only edits preserve the original predicate. Replacing an item or switching to a tag rebuilds its conditions.
-- NeoForge 1.21.1 rejects ingredients with explicitly removed components and retains the previous recipe because its native format cannot express absence. Other component-era editions preserve removals. Exported recipes use the corresponding loader/API's native formats.
+- Manage local/world datapacks and disable original JSON recipes without changing upstream files.
+- Double-click recipe entries to edit; use name dialogs, hierarchical Back navigation and pack-name completions.
+- Configurable backup retention; ZIP exports; all six editions updated to **1.0.5**.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full history.
+## Managing recipes and datapacks
+
+Choose **Manage packs** in the editor to switch between **Current world** and **Local exports**. Click a pack to select it for rename, deletion or export; double-click its name to open recipe entries. Double-click a recipe entry to edit the saved JSON, retaining its ID and pack; disabled entries must be restored first. Changing the ID saves a new recipe and keeps the original. The manager no longer creates packs or sets the export target. Exporting from the editor creates a named pack when needed. Rename, move and restore use dedicated name dialogs that preserve input on validation errors; moving to a missing pack confirms its creation. Back and Esc return from entries/backups to the pack list, then to the editor. Enter the target name beside the editor's overwrite toggle. It initially contains `vjrm_generated`; an empty field shows a name hint and must be filled before export/disable. Prefix suggestions merge local and current-world packs with source labels; use the mouse, arrow keys, Tab to accept and Esc to dismiss. Existing `vjrm_generated` packs remain supported.
+
+JEI/EMI copies retain their original recipe IDs. The editor's **Disable recipe** button opens confirmation directly, showing the source recipe ID and entered target pack, without searching a manager catalog. Cancel or completion returns to the editor. Disable rules are written to that pack in the current world. Removing an override or disable entry restores the upstream recipe after `/reload`; upstream files stay intact and original JSON is not backed up. Cross-pack ID conflicts still require an explicit choice to replace the existing entry or move it into the target pack.
+
+World management is server-authoritative and uses `exportPermissionLevel` (OP2 by default). Players must run `/reload` themselves after changes. VJRM attempts to select its packs at higher priority and reports if this cannot be ensured; check `/datapack list` when prompted. NeoForge conditional overrides disable JSON recipes only when above the source pack. Recipes injected later by scripts or mod code are outside this feature; GTCEu KubeJS exports keep their existing workflow.
+
+**Export ZIP** packages the complete pack and downloads it to the client's `vjrm_exports/exports/<name>.zip`, including recipes, disable rules and management metadata. It does not install the ZIP into a world.
+
+Deleting a pack confirms its name and counts before moving it to **Deleted packs**. Restore under an available name; restoration refuses name and recipe-ID conflicts. Permanent backup deletion requires another confirmation. `backupRetentionDays` controls retention separately for local exports and world packs:
+
+- `0` (default): clean on client/world-server shutdown, with startup cleanup after an abnormal exit.
+- Positive: retain that many days; clean expired backups at startup and shutdown.
+- `-1`: retain until manually purged.
+
+Local settings live in `config/vjrm-client.toml`, with backups in `config/vjrm/backups`. World backups live in `<world>/data/vjrm/backups`; retention uses NeoForge's loaded `vjrm-server.toml` (normally under the world's `serverconfig`; dedicated-server locations follow NeoForge). A remote player disconnect does not clean server backups; the server must stop. Cleanup never removes active packs.
 
 ## Editing recipes
 

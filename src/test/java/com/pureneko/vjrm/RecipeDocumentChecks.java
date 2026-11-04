@@ -21,6 +21,7 @@ public final class RecipeDocumentChecks {
         var registries=helper.getLevel().registryAccess();
         int checks=0;
         checks+=FieldProfileChecks.run();
+        checks+=DatapackManagementChecks.run();
         checks+=ItemPredicateChecks.run(registries);
         IngredientDataChecks.run(registries);
         IngredientDataChecks.export(helper.getLevel().getServer());
@@ -126,7 +127,27 @@ public final class RecipeDocumentChecks {
         if(deniedResult.success()||!deniedResult.detail().equals("permission"))throw new AssertionError("Non-OP export accepted");checks++;
         var acceptedResult=send(request,granted);
         if(!acceptedResult.success())throw new AssertionError("OP export failed: "+acceptedResult.detail());checks++;
-        var throttled=send(request,granted);if(throttled.success()||!throttled.detail().equals("rate"))throw new AssertionError("Export rate limit failed");checks++;
+        var managed=new com.pureneko.vjrm.export.ManagedDatapacks(com.pureneko.vjrm.export.DatapackExporter.serverDatapackRoot(server,"vjrm_generated").getParent(),com.pureneko.vjrm.network.DatapackManagementNetwork.backupRoot(server));
+        var managedRecipe=managed.entries("vjrm_generated").stream().filter(e->e.id().equals(recipeId)).findFirst().orElseThrow();
+        if(!managedRecipe.kind().equals("recipe"))throw new AssertionError("Server export was not registered as a managed recipe");checks++;
+        var managerRequest=new com.pureneko.vjrm.network.DatapackManagementNetwork.Request(51,"packs","","0","","",false);
+        var deniedManagement=sendManagement(managerRequest,denied);
+        if(deniedManagement.success()||!deniedManagement.detail().equals("permission"))throw new AssertionError("Non-OP datapack management accepted");checks++;
+        var managerResult=sendManagement(managerRequest,granted);
+        if(!managerResult.success()||!managerResult.json().contains("vjrm_generated"))throw new AssertionError("Managed pack network request failed: "+managerResult.detail());checks++;
+        var disabledId=net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("vjrm","source_check");
+        var disableResult=sendManagement(new com.pureneko.vjrm.network.DatapackManagementNetwork.Request(52,"disable","vjrm_generated","",""+disabledId,"",true),granted);
+        if(!disableResult.success()||!managed.get("vjrm_generated",disabledId).getAsJsonArray("neoforge:conditions").get(0).getAsJsonObject().get("type").getAsString().equals("neoforge:false"))throw new AssertionError("Server-side recipe disable failed: "+disableResult.detail());checks++;
+        server.reloadResources(server.getPackRepository().getSelectedIds()).join();
+        if(server.getRecipeManager().byKey(disabledId).isPresent())throw new AssertionError("Disabled recipe still loaded after reload");checks++;
+        var restoredResult=sendManagement(new com.pureneko.vjrm.network.DatapackManagementNetwork.Request(53,"enable","vjrm_generated","",disabledId.toString(),"",false),granted);
+        if(!restoredResult.success())throw new AssertionError("Restore request failed: "+restoredResult.detail());
+        server.reloadResources(server.getPackRepository().getSelectedIds()).join();
+        if(server.getRecipeManager().byKey(disabledId).isEmpty())throw new AssertionError("Upstream recipe did not return after removing disable rule");checks++;
+        if(managed.entries("vjrm_generated").stream().anyMatch(e->e.id().equals(disabledId.toString())))throw new AssertionError("Server-side recipe restore failed");checks++;
+        var freshRatePlayer=new net.minecraft.server.level.ServerPlayer(server,helper.getLevel(),new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(),"RateAllowed"),net.minecraft.server.level.ClientInformation.createDefault()) {@Override public boolean hasPermissions(int level){return true;}};
+        send(new com.pureneko.vjrm.network.RecipeNetwork.ExportRequest("test:rate_"+System.nanoTime(),preserved.json().toString(),false),freshRatePlayer);
+        var throttled=send(request,freshRatePlayer);if(throttled.success()||!throttled.detail().equals("rate"))throw new AssertionError("Export rate limit failed");checks++;
         var sourceResult=sendSource(new com.pureneko.vjrm.network.RecipeSourceNetwork.Request(42,sourceId.toString()),denied);
         if(sourceResult.token()!=42||!sourceResult.error().isEmpty()||!sourceResult.json().contains("source_marker"))throw new AssertionError("Source response failed");checks++;
         var missingResult=sendSource(new com.pureneko.vjrm.network.RecipeSourceNetwork.Request(43,"vjrm:missing"),denied);
@@ -157,5 +178,14 @@ public final class RecipeDocumentChecks {
             throw new UnsupportedOperationException(method.getName());
         });
         com.pureneko.vjrm.network.RecipeNetwork.handleExport(request,context);return java.util.Objects.requireNonNull(result.get(),"Missing export response");
+    }
+    private static com.pureneko.vjrm.network.DatapackManagementNetwork.Response sendManagement(com.pureneko.vjrm.network.DatapackManagementNetwork.Request request,net.minecraft.server.level.ServerPlayer player){
+        var result=new java.util.concurrent.atomic.AtomicReference<com.pureneko.vjrm.network.DatapackManagementNetwork.Response>();
+        var context=(net.neoforged.neoforge.network.handling.IPayloadContext)java.lang.reflect.Proxy.newProxyInstance(RecipeDocumentChecks.class.getClassLoader(),new Class<?>[]{net.neoforged.neoforge.network.handling.IPayloadContext.class},(proxy,method,args)->{
+            if(method.getName().equals("player"))return player;
+            if(method.getName().equals("reply")){result.set((com.pureneko.vjrm.network.DatapackManagementNetwork.Response)args[0]);return null;}
+            throw new UnsupportedOperationException(method.getName());
+        });
+        com.pureneko.vjrm.network.DatapackManagementNetwork.handle(request,context);return java.util.Objects.requireNonNull(result.get(),"Missing datapack management response");
     }
 }

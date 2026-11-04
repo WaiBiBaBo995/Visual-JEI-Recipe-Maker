@@ -20,6 +20,7 @@ import java.util.*;
 public final class RecipeNetwork {
     private static final ModConfigSpec.Builder BUILDER=new ModConfigSpec.Builder();
     public static final ModConfigSpec.IntValue PERMISSION=BUILDER.defineInRange("exportPermissionLevel",2,0,4);
+    public static final ModConfigSpec.IntValue BACKUP_RETENTION_DAYS=BUILDER.comment("Deleted world-pack backups: 0 = clear on world server exit/startup, positive = days to retain, -1 = keep until manually purged.").defineInRange("backupRetentionDays",0,-1,36500);
     public static final ModConfigSpec SPEC=BUILDER.build();
     private static final Map<UUID,Long> LAST_EXPORT=new HashMap<>();
     public record ExportRequest(String id,String json,boolean overwrite) implements CustomPacketPayload {
@@ -55,9 +56,10 @@ public final class RecipeNetwork {
             }
             var document=new RecipeDocument(submitted);
             document.decode(player.registryAccess());
-            var root=DatapackExporter.serverDatapackRoot(player.server,"vjrm_generated").toAbsolutePath();
-            DatapackExporter.writePackMeta(root);
-            DatapackExporter.export(root,id.getNamespace(),id.getPath(),document.json(),request.overwrite());
+            var root=DatapackExporter.serverDatapackRoot(player.server,"vjrm_generated").getParent();
+            new com.pureneko.vjrm.export.ManagedDatapacks(root,com.pureneko.vjrm.network.DatapackManagementNetwork.backupRoot(player.server))
+                    .save("vjrm_generated",id,document.json(),request.overwrite(),false,DatapackManagementNetwork.source(player.server,id));
+            DatapackManagementNetwork.prioritize(player.server);
             context.reply(new ExportResult(true,id.toString()));
         }catch(Exception ex){String detail=String.valueOf(ex.getMessage());context.reply(new ExportResult(false,detail.substring(0,Math.min(2000,detail.length()))));}
     }
